@@ -21,7 +21,7 @@ header,footer{display:flex;gap:20px;align-items:center;border:1px solid #1a2836;
 header b{letter-spacing:.35em;color:#fff;font-weight:600;margin-right:auto}
 .ind{font-size:10px;letter-spacing:.14em;color:#6f8396;display:flex;align-items:center;gap:7px}
 .ind i{width:7px;height:7px;border-radius:50%;background:#3a4856}.ind.on i{background:#3ddc97}
-#st{color:var(--c)}#clk,#bat{font-variant-numeric:tabular-nums;color:#9fb2c4;font-size:12px}
+#lvlw{display:inline-block;width:46px;height:4px;background:#1a2836}#lvl{display:block;height:100%;width:0;background:#3ddc97}#st{color:var(--c)}#clk,#bat{font-variant-numeric:tabular-nums;color:#9fb2c4;font-size:12px}
 main{display:grid;grid-template-columns:minmax(240px,1fr) 1.2fr minmax(280px,1fr);gap:12px;min-height:0}
 section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-direction:column;gap:10px;background:#0b121a}
 .t{font-size:10px;letter-spacing:.2em;color:#6f8396;text-transform:uppercase;border-bottom:1px solid #1a2836;padding-bottom:6px}
@@ -47,9 +47,9 @@ section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-dir
 <label>Tratamiento (jefe, señor, capitán…)<input id="cTitle" placeholder="jefe"></label>
 <label>Ciudad para el clima (vacío = mi ubicación)<input id="cCity" placeholder="Guadalajara"></label>
 <label class="chk"><input type="checkbox" id="cWake"> Exigir la palabra "TARS" para obedecer</label>
-<button id="go">INICIAR SISTEMAS</button></div></div>
+<div id="diag" class="sub" style="text-transform:none;letter-spacing:0;line-height:1.5;color:var(--c)"></div><button id="go">INICIAR SISTEMAS</button></div></div>
 <div id="app">
-<header><b>TARS</b><span class="ind" id="iM"><i></i>MICRÓFONO</span><span class="ind" id="iC"><i></i>CÁMARA</span><span class="ind" id="iN"><i></i>RED</span><span class="ind" id="st">EN ESPERA</span><span id="bat"></span><span id="clk"></span><button id="cfgB">Configuración</button></header>
+<header><b>TARS</b><span class="ind" id="iM"><i></i>MICRÓFONO <span id="lvlw"><span id="lvl"></span></span></span><span class="ind" id="iC"><i></i>CÁMARA</span><span class="ind" id="iN"><i></i>RED</span><span class="ind" id="st">EN ESPERA</span><span id="bat"></span><span id="clk"></span><button id="cfgB">Configuración</button></header>
 <main>
 <section><div class="t">Registro de operaciones</div><div id="log"></div><form id="f"><input id="txt" placeholder="Escriba un comando..." autocomplete="off"><button>Enviar</button></form></section>
 <section id="mid"><canvas id="orb" width="600" height="600"></canvas><div id="heard"></div><div id="gest"></div></section>
@@ -92,7 +92,7 @@ function startRec(){
  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],x=r[0].transcript;
   if((speaking&&speechSynthesis.speaking)||Date.now()-lastEnd<700)continue;$('heard').textContent=x;if(r.isFinal)handle(x,true)}};
  rec.onend=()=>{rec=null;if(listening)setTimeout(startRec,300)};
- rec.onerror=e=>{if(e.error==='not-allowed'){listening=false;$('micB').classList.remove('on');$('iM').classList.remove('on');setState('idle');speak('Necesito permiso para usar el micrófono.')}else if(!['no-speech','aborted'].includes(e.error))$('heard').textContent='Error de voz: '+e.error};
+ rec.onerror=e=>{if(/not-allowed/.test(e.error)){listening=false;$('micB').classList.remove('on');$('iM').classList.remove('on');setState('idle');card('<h3>Micrófono bloqueado</h3><p>Pulse el candado junto a la dirección, permita micrófono y cámara, y recargue la página.</p><p class="sm">Si abre el archivo directamente (file://), Chrome puede volver a preguntar en cada inicio. Es más estable abrirlo con iniciar_tars.bat (http://localhost).</p>');speak('Necesito permiso para usar el micrófono.')}else if(!['no-speech','aborted'].includes(e.error))$('heard').textContent='Error de voz: '+e.error};
  try{rec.start()}catch(e){}}
 function stopRec(){listening=false;$('micB').classList.remove('on');$('iM').classList.remove('on');if(rec){rec.onend=null;try{rec.stop()}catch(e){}rec=null}setState('idle')}
 function beep(){try{const a=new AudioContext(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();setTimeout(()=>{o.stop();a.close()},500)}catch(e){}}
@@ -223,6 +223,17 @@ on(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey)\b/,()=>speak(gree
 function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Identidad</b><br>"Llámame Roberto Carlos", "dime jefe"</p><p class="sm"><b>Consultas</b><br>"Qué es la fibra óptica", "quién fue Tesla", "busca ...", "continúa" (sigue leyendo), "clima", "clima en Madrid", "dólar", "traduce hola al inglés"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / PowerPoint / Outlook / WhatsApp / Spotify / calculadora / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Palma 1 s: esta ayuda · Puño: callar · Paz: Google · Pulgar: confirmar</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
 $('panel').onclick=e=>{const f=e.target.closest('.fi');if(f)openFile(+f.dataset.i);
  if(e.target.id==='addApp'){const n=norm($('an').value),u=$('au').value.trim();if(n&&u){cfg.apps[n]=u;save();speak(`Acceso "${n}" guardado. Diga: abre ${n}.`)}}};
+let mediaStream=null,analyser=null;
+function meter(st){try{const a=new(window.AudioContext||window.webkitAudioContext)();a.resume();const src=a.createMediaStreamSource(st);analyser=a.createAnalyser();analyser.fftSize=256;src.connect(analyser)}catch(e){}}
+function lvlUpd(){if(!analyser)return;const d=new Uint8Array(analyser.fftSize);analyser.getByteTimeDomainData(d);let m=0;for(const v of d)m=Math.max(m,Math.abs(v-128));$('lvl').style.width=Math.min(100,m*2.5)+'%'}
+async function perms(){const dg=[];
+ if(window.self!==window.top)dg.push('La página está dentro de una vista previa, donde el micrófono y la cámara están bloqueados. Descargue el archivo y ábralo directamente en Chrome o Edge.');
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){dg.push('Este contexto no permite micrófono ni cámara. Abra el archivo en Chrome o Edge, o sírvalo desde http://localhost.');return dg}
+ if(!SR)dg.push('Este navegador no tiene reconocimiento de voz. Use Chrome o Edge.');
+ try{mediaStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true})}
+ catch(e){dg.push('Cámara no disponible o denegada ('+e.name+').');try{mediaStream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e2){dg.push('Micrófono denegado o no encontrado ('+e2.name+'). Pulse el candado junto a la dirección y permita micrófono y cámara.')}}
+ if(mediaStream&&mediaStream.getAudioTracks().length)meter(mediaStream);
+ return dg}
 const WK='(tars|tarz|tarce|tarse|tarts|tarzan|tarsan)';
 async function handle(raw,voice){raw=raw.trim();if(!raw)return;
  if(voice&&cfg.wake&&!new RegExp('\\b'+WK+'\\b','i').test(raw))return;
@@ -234,15 +245,17 @@ async function handle(raw,voice){raw=raw.trim();if(!raw)return;
 let hands,cam=false,stream,cc='#5cc8ff',hv=null,hold={g:'',n:0},cool=0,gcool=0,pinched=false,cx=innerWidth/2,cy=innerHeight/2,lastG='';
 const GN={pinch:'Pinza: clic',open:'Palma: comandos',peace:'Paz: Google',point:'Índice: cursor',fist:'Puño: callar',thumb:'Pulgar: confirmar'};
 async function camOn(q){if(cam)return q?0:speak('La cámara ya está activa.');
- if(!window.Hands)return speak('No pude cargar el módulo de gestos. Verifique su conexión a internet.');
- try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}})}catch(e){return q?($('heard').textContent='Cámara no disponible: permita el acceso'):speak('No tengo acceso a la cámara.')}
- const v=$('vid');$('cam').classList.add('on');v.srcObject=stream;await v.play();
+ const lv=t=>t&&t[0]&&t[0].readyState==='live';
+ try{stream=lv(mediaStream&&mediaStream.getVideoTracks())?mediaStream:await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}})}
+ catch(e){const m='Cámara no disponible ('+e.name+'). Permita el acceso desde el candado de la barra de direcciones.';return q?($('heard').textContent=m):speak(m)}
+ const v=$('vid');$('cam').classList.add('on');v.srcObject=stream;try{await v.play()}catch(e){}
+ cam=true;$('camB').classList.add('on');$('iC').classList.add('on');
+ if(!window.Hands)return q?($('heard').textContent='Cámara activa. El módulo de gestos no cargó (revise su conexión).'):speak('Cámara activa, pero el módulo de gestos no cargó. Revise su conexión a internet.');
  hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});
  hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.7,minTrackingConfidence:.6});hands.onResults(onHand);
- cam=true;$('cam').classList.add('on');$('camB').classList.add('on');$('iC').classList.add('on');
- (async function L(){if(!cam)return;try{await hands.send({image:v})}catch(e){}requestAnimationFrame(L)})();
- if(!q)return speak('Sensores de gestos en línea.')}
-function camOff(){cam=false;if(stream)stream.getTracks().forEach(t=>t.stop());try{hands&&hands.close()}catch(e){}hands=null;$('cam').classList.remove('on');$('camB').classList.remove('on');$('iC').classList.remove('on');$('cur').style.display='none';$('gest').textContent=''}
+ (async function L(){if(!cam||!hands)return;try{await hands.send({image:v})}catch(e){}requestAnimationFrame(L)})();
+ if(!q)return speak('Cámara y sensores de gestos en línea.')}
+function camOff(){cam=false;if(stream)stream.getVideoTracks().forEach(t=>t.stop());try{hands&&hands.close()}catch(e){}hands=null;$('cam').classList.remove('on');$('camB').classList.remove('on');$('iC').classList.remove('on');$('cur').style.display='none';$('gest').textContent=''}
 function onHand(r){const ov=$('ov'),ox=ov.getContext('2d');ov.width=r.image.width;ov.height=r.image.height;ox.clearRect(0,0,ov.width,ov.height);
  const L=r.multiHandLandmarks&&r.multiHandLandmarks[0],cur=$('cur');
  if(!L){setG('');cur.style.display='none';hold={g:'',n:0};return}
@@ -265,7 +278,7 @@ function onHand(r){const ov=$('ov'),ox=ov.getContext('2d');ov.width=r.image.widt
   else if(g==='thumb')speak('Entendido, '+addr()+'.')}}
 function setG(g){if(g!==lastG){lastG=g;$('gest').textContent=GN[g]||''}}
 const oc=$('orb'),o=oc.getContext('2d');let ph=0;
-(function draw(){ph+=.01;o.clearRect(0,0,600,600);
+(function draw(){ph+=.01;lvlUpd();o.clearRect(0,0,600,600);
  const a=state==='speak'?8+Math.sin(ph*30)*6+Math.random()*8:state==='listen'?4+Math.sin(ph*6)*3:2;
  o.strokeStyle=cc;o.shadowColor=cc;o.shadowBlur=6;
  o.setLineDash([2,10]);o.lineWidth=2;o.globalAlpha=.5;o.beginPath();o.arc(300,300,265,ph,ph+7);o.stroke();o.setLineDash([]);
@@ -276,9 +289,9 @@ const oc=$('orb'),o=oc.getContext('2d');let ph=0;
 setInterval(()=>$('clk').textContent=new Date().toLocaleTimeString('es-MX'),1000);
 navigator.getBattery&&navigator.getBattery().then(b=>{const u=()=>$('bat').textContent='Batería '+Math.round(b.level*100)+'%'+(b.charging?' · carga':'');u();b.onlevelchange=b.onchargingchange=u});
 $('cName').value=cfg.name;$('cTitle').value=cfg.title;$('cCity').value=cfg.city;$('cWake').checked=cfg.wake;
-$('go').onclick=()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;save();$('boot').style.display='none';
+$('go').onclick=async()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;save();$('diag').textContent='Solicitando acceso al micrófono y la cámara. Acepte el aviso del navegador...';const dg=mediaStream?[]:await perms();$('diag').textContent='';$('boot').style.display='none';
  if(window.speechSynthesis)speechSynthesis.getVoices();startRec();camOn(true);
- speak(first?`${greet()}, ${addr()}. Sistemas en línea. Diga "ayuda" para ver mis comandos. ¿En qué puedo servirle?`:`Configuración guardada. Lo llamaré ${addr()}.`);first=false;help()};
+ speak(first?`${greet()}, ${addr()}. Sistemas en línea. Diga "ayuda" para ver mis comandos. ¿En qué puedo servirle?`:`Configuración guardada. Lo llamaré ${addr()}.`);first=false;help();if(dg.length)card('<h3>Diagnóstico</h3>'+dg.map(x=>'<p>'+esc(x)+'</p>').join(''))};
 const net=()=>$('iN').classList.toggle('on',navigator.onLine);net();addEventListener('online',net);addEventListener('offline',net);setInterval(()=>{if(speaking&&!speechSynthesis.speaking){speaking=false;setState(listening?'listen':'idle')}if(listening&&!rec)startRec()},3000);
 $('cfgB').onclick=()=>$('boot').style.display='grid';
 $('micB').onclick=()=>listening?stopRec():startRec();
