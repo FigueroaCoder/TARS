@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TARS</title>
+<style>
+:root{--c:#5cc8ff;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:#080d13;color:#c9d6e2;font:13px/1.45 'Segoe UI',Inter,system-ui,sans-serif;overflow:hidden}
+#boot{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:#080d13f5}
+.box{width:min(440px,92vw);border:1px solid #243445;padding:30px;display:grid;gap:14px;background:#0d151e}
+h1{letter-spacing:.35em;font-weight:600;color:#fff;font-size:20px}
+.sub{color:#7d8fa1;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+label{display:grid;gap:5px;font-size:11px;color:#8fa2b5;letter-spacing:.08em;text-transform:uppercase}
+.chk{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:12px}.chk input{width:auto}
+input{background:#09111a;border:1px solid #243445;color:#e6eef6;padding:9px 10px;border-radius:2px;outline:none;font:inherit;text-transform:none;letter-spacing:0}
+input:focus{border-color:var(--c)}
+button,.btn{background:transparent;color:#c9d6e2;border:1px solid #2c3f52;padding:7px 14px;border-radius:2px;cursor:pointer;font:inherit;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;display:inline-block;margin:2px}
+button:hover,.hv,.btn:hover{border-color:var(--c);color:var(--c);background:#0f1c28}button.on{border-color:var(--c);color:var(--c)}
+#go{background:var(--c);color:#04121c;font-weight:600}#go:hover{color:#04121c;opacity:.9}
+#app{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding:12px;gap:12px}
+header,footer{display:flex;gap:20px;align-items:center;border:1px solid #1a2836;padding:9px 16px;background:#0b121a;flex-wrap:wrap}
+header b{letter-spacing:.35em;color:#fff;font-weight:600;margin-right:auto}
+.ind{font-size:10px;letter-spacing:.14em;color:#6f8396;display:flex;align-items:center;gap:7px}
+.ind i{width:7px;height:7px;border-radius:50%;background:#3a4856}.ind.on i{background:#3ddc97}
+#st{color:var(--c)}#clk,#bat{font-variant-numeric:tabular-nums;color:#9fb2c4;font-size:12px}
+main{display:grid;grid-template-columns:minmax(240px,1fr) 1.2fr minmax(280px,1fr);gap:12px;min-height:0}
+section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-direction:column;gap:10px;background:#0b121a}
+.t{font-size:10px;letter-spacing:.2em;color:#6f8396;text-transform:uppercase;border-bottom:1px solid #1a2836;padding-bottom:6px}
+#log{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px}
+#log div{padding:6px 10px;border-left:2px solid var(--c);background:#0f1a25}
+#log .U{border-color:#7d8fa1;color:#e6eef6}
+#f{display:flex;gap:6px}#txt{flex:1}
+#mid{align-items:center;justify-content:center;text-align:center}
+#orb{width:min(100%,500px);aspect-ratio:1}
+#heard{min-height:24px;color:#e6eef6;font-size:15px}#gest{color:var(--c);min-height:16px;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+#cam{display:none;position:fixed;top:72px;right:18px;width:210px;aspect-ratio:4/3;z-index:15;background:#05090e;border:1px solid var(--c)}#cam.on{display:block}
+#cam video,#cam canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}#cam video{opacity:.8}
+#panel{flex:1;overflow:auto}#panel h3{color:#fff;font-weight:600;font-size:15px;margin-bottom:8px}#panel p{margin:5px 0}
+.big{font-size:42px;font-weight:300;color:#fff}img{max-width:100%;max-height:150px;margin:0 0 6px 10px;float:right}
+.sm{font-size:12px;color:#9fb2c4}a{color:var(--c)}
+.fl{max-height:42vh;overflow:auto}.fi{padding:6px;cursor:pointer;border-bottom:1px solid #1a2836;word-break:break-all}.fi:hover{background:#0f1c28}
+.ext{display:inline-block;min-width:42px;font-size:10px;color:var(--c);letter-spacing:.08em}
+#cur{position:fixed;left:-14px;top:-14px;width:28px;height:28px;border:2px solid var(--c);border-radius:50%;pointer-events:none;display:none;z-index:20}#cur.p{background:var(--c)}
+@media(max-width:900px){main{grid-template-columns:1fr;overflow:auto}html,body{overflow:auto}#orb{max-width:300px}}
+</style></head><body>
+<div id="boot"><div class="box"><h1>TARS</h1><div class="sub">Sistema de asistencia personal</div>
+<label>¿Cómo debo llamarlo?<input id="cName" placeholder="Roberto Carlos"></label>
+<label>Tratamiento (jefe, señor, capitán…)<input id="cTitle" placeholder="jefe"></label>
+<label>Ciudad para el clima (vacío = mi ubicación)<input id="cCity" placeholder="Guadalajara"></label>
+<label class="chk"><input type="checkbox" id="cWake"> Exigir la palabra "TARS" para obedecer</label>
+<button id="go">INICIAR SISTEMAS</button></div></div>
+<div id="app">
+<header><b>TARS</b><span class="ind" id="iM"><i></i>MICRÓFONO</span><span class="ind" id="iC"><i></i>CÁMARA</span><span class="ind" id="iN"><i></i>RED</span><span class="ind" id="st">EN ESPERA</span><span id="bat"></span><span id="clk"></span><button id="cfgB">Configuración</button></header>
+<main>
+<section><div class="t">Registro de operaciones</div><div id="log"></div><form id="f"><input id="txt" placeholder="Escriba un comando..." autocomplete="off"><button>Enviar</button></form></section>
+<section id="mid"><canvas id="orb" width="600" height="600"></canvas><div id="heard"></div><div id="gest"></div></section>
+<section><div class="t">Información</div><div id="panel"></div></section>
+</main>
+<footer><button id="micB">Micrófono</button><button id="camB">Cámara</button><button id="dirB">Carpeta</button><button id="helpB">Comandos</button></footer>
+</div>
+<div id="cam"><video id="vid" playsinline muted></video><canvas id="ov"></canvas></div>
+<div id="cur"></div><input type="file" id="fi" webkitdirectory multiple hidden>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+<script>
+const $=s=>document.getElementById(s),enc=encodeURIComponent;
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const j=async u=>(await fetch(u)).json();
+let cfg={name:'',title:'jefe',city:'',wake:false,notes:[],apps:{}};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem('jv')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('jv',JSON.stringify(cfg))}catch(e){}};
+const addr=()=>[cfg.title,cfg.name].filter(Boolean).join(' ')||'jefe';
+const greet=()=>{const h=new Date().getHours();return h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'};
+const card=h=>$('panel').innerHTML=h;
+let curU=null,state='idle',speaking=false,listening=false,lastEnd=0,voices=[],rec=null,first=true;
+const ST={idle:'EN ESPERA',listen:'ESCUCHANDO',speak:'HABLANDO'};
+const setState=s=>{state=s;$('st').textContent=ST[s]};
+function log(w,t){const d=document.createElement('div');d.className=w;d.textContent=(w=='U'?'» ':'J: ')+t;$('log').append(d);$('log').scrollTop=1e9;while($('log').children.length>40)$('log').firstChild.remove()}
+if(window.speechSynthesis){voices=speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>voices=speechSynthesis.getVoices()}
+function speak(t,lang='es-MX'){log('J',t);return new Promise(res=>{
+ if(!window.speechSynthesis)return res();
+ speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[*_#]/g,''));u.lang=lang;
+ const L=lang.toLowerCase(),v=voices.find(v=>v.lang.replace('_','-').toLowerCase()==L)||voices.find(v=>v.lang.toLowerCase().startsWith(L.slice(0,2)));
+ if(v)u.voice=v;u.pitch=.5;u.rate=.92;curU=u;
+ u.onstart=()=>{speaking=true;setState('speak')};
+ let dn=false;const to=setTimeout(()=>fin(),Math.max(5000,t.length*120));const fin=()=>{if(dn)return;dn=true;clearTimeout(to);if(curU===u){speaking=false;lastEnd=Date.now();setState(listening?'listen':'idle')}res()};u.onend=u.onerror=fin;
+ speechSynthesis.speak(u)})}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function startRec(){
+ if(!SR){speak('Su navegador no admite reconocimiento de voz. Use Chrome o Edge. Aún puede escribirme comandos.');return}
+ listening=true;$('micB').classList.add('on');$('iM').classList.add('on');setState(speaking?'speak':'listen');if(rec)return;
+ rec=new SR();rec.lang='es-MX';rec.continuous=true;rec.interimResults=true;
+ rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],x=r[0].transcript;
+  if((speaking&&speechSynthesis.speaking)||Date.now()-lastEnd<700)continue;$('heard').textContent=x;if(r.isFinal)handle(x,true)}};
+ rec.onend=()=>{rec=null;if(listening)setTimeout(startRec,300)};
+ rec.onerror=e=>{if(e.error==='not-allowed'){listening=false;$('micB').classList.remove('on');$('iM').classList.remove('on');setState('idle');speak('Necesito permiso para usar el micrófono.')}else if(!['no-speech','aborted'].includes(e.error))$('heard').textContent='Error de voz: '+e.error};
+ try{rec.start()}catch(e){}}
+function stopRec(){listening=false;$('micB').classList.remove('on');$('iM').classList.remove('on');if(rec){rec.onend=null;try{rec.stop()}catch(e){}rec=null}setState('idle')}
+function beep(){try{const a=new AudioContext(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();setTimeout(()=>{o.stop();a.close()},500)}catch(e){}}
+function go(u,l){const web=/^(https?|blob):/.test(u);let ok=true;
+ if(web)ok=!!window.open(u,'_blank');else{const a=document.createElement('a');a.href=u;a.click()}
+ if(!ok||!web)card(`<h3> ${esc(l)}</h3><p>${web?'El navegador bloqueó la ventana emergente. Permítala para este archivo o pulse:':'Si no se abrió solo, pulse (el navegador puede pedir permiso):'}</p><a class="btn" target="_blank" href="${esc(u)}">Abrir ${esc(l)}</a>`);
+ return speak('Abriendo '+l+'.')}
+const APPS=`excel|ms-excel:|Excel
+word|ms-word:|Word
+power ?point|ms-powerpoint:|PowerPoint
+outlook|outlook:|Outlook
+onenote|onenote:|OneNote
+teams|msteams:|Teams
+calculadora|calculator:|Calculadora
+configuracion|ms-settings:|Configuración
+whatsapp|whatsapp:|WhatsApp
+spotify|spotify:|Spotify
+zoom|zoommtg:|Zoom
+discord|discord:|Discord
+steam|steam:|Steam
+youtube|https://www.youtube.com|YouTube
+gmail|https://mail.google.com|Gmail
+correo|https://mail.google.com|Gmail
+google docs|https://docs.google.com/document/create|Google Docs
+hojas de calculo|https://sheets.google.com|Google Sheets
+maps|https://www.google.com/maps|Maps
+mapas|https://www.google.com/maps|Maps
+drive|https://drive.google.com|Drive
+calendario|https://calendar.google.com|Calendario
+chatgpt|https://chatgpt.com|ChatGPT
+claude|https://claude.ai|Claude
+github|https://github.com|GitHub
+netflix|https://www.netflix.com|Netflix
+facebook|https://www.facebook.com|Facebook
+instagram|https://www.instagram.com|Instagram
+linkedin|https://www.linkedin.com|LinkedIn
+amazon|https://www.amazon.com.mx|Amazon
+mercado libre|https://www.mercadolibre.com.mx|Mercado Libre
+traductor|https://translate.google.com|Traductor
+noticias|https://news.google.com|Noticias
+google|https://www.google.com|Google`.split('\n').map(l=>l.split('|'));
+const WEB={Excel:'https://www.office.com/launch/excel',Word:'https://www.office.com/launch/word',PowerPoint:'https://www.office.com/launch/powerpoint'};
+const WC={0:'despejado',1:'mayormente despejado',2:'parcialmente nublado',3:'nublado',45:'con niebla',48:'con niebla',51:'con llovizna',53:'con llovizna',55:'con llovizna fuerte',61:'con lluvia ligera',63:'con lluvia',65:'con lluvia fuerte',71:'con nieve',80:'con chubascos',81:'con chubascos',82:'con chubascos fuertes',95:'con tormenta',96:'con tormenta y granizo',99:'con tormenta y granizo'};
+async function weather(city){let lat,lon,name=city;
+ if(city){const g=await j('https://geocoding-api.open-meteo.com/v1/search?count=1&language=es&name='+enc(city)),r=g.results&&g.results[0];
+  if(!r)return speak('No encontré la ciudad '+city+'.');lat=r.latitude;lon=r.longitude;name=r.name}
+ else{try{const p=await new Promise((a,b)=>navigator.geolocation.getCurrentPosition(a,b,{timeout:8000}));lat=p.coords.latitude;lon=p.coords.longitude;name='su ubicación'}
+  catch(e){return speak('No pude obtener su ubicación. Diga, por ejemplo: clima en Guadalajara, o configure su ciudad.')}}
+ const w=await j(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+ const c=w.current,d=w.daily,ds=WC[c.weather_code]||'variable',R=Math.round;
+ card(`<h3> ${esc(name)}</h3><div class="big">${R(c.temperature_2m)}°C</div><p>${ds}</p><p>Sensación ${R(c.apparent_temperature)}° · Humedad ${c.relative_humidity_2m}% · Viento ${R(c.wind_speed_10m)} km/h</p><p>Máx ${R(d.temperature_2m_max[0])}° · Mín ${R(d.temperature_2m_min[0])}° · Lluvia ${d.precipitation_probability_max[0]}%</p>`);
+ return speak(`En ${name} hay ${R(c.temperature_2m)} grados, ${ds}. Máxima de ${R(d.temperature_2m_max[0])} y mínima de ${R(d.temperature_2m_min[0])}, con ${d.precipitation_probability_max[0]} por ciento de probabilidad de lluvia.`)}
+const STOP=new Set('el la los las un una de del al y o en que es son fue sobre acerca para por con me te se lo le mas muy como cual cuales quien quienes donde cuando puedes puede podrias decir dime explica explicame cuentame hablame informacion investiga busca buscar averigua favor tars jarvis'.split(' '));
+const keys=q=>norm(q).split(/[^a-z0-9ñ]+/).filter(w=>w.length>2&&!STOP.has(w));
+function cleanQ(raw){return raw.replace(/^(por favor[,\s]*)?(oye |hey )?(tars[,\s]*)?/i,'').replace(/^(me\s+)?(puedes|podrias|puede)\s+(decir|explicar|buscar|investigar)(me)?\s*/i,'').replace(/^(dime|d[ií]game|expl[ií]came|cu[eé]ntame|h[aá]blame|busca|buscar|investiga|googlea|averigua|define)\s*/i,'').replace(/^(qu[eé]|qui[eé]n(es)?|cu[aá]l(es)?|d[oó]nde|cu[aá]ndo|c[oó]mo|para qu[eé])\s+(es|son|fue|fueron|est[aá]n?|queda|funciona|funcionan|sirve|sirven|significa)?\s*/i,'').replace(/^(informaci[oó]n |datos |todo )?(de |del |sobre |acerca de |en internet |en google )+/i,'').replace(/^(el|la|los|las|un|una)\s+/i,'').replace(/[?¿!¡.,]+/g,'').trim()}
+let rest=[];const say=a=>speak(a.join(' '));
+async function wiki(q){
+ if(!q)return speak('No logré entender su consulta, '+addr()+'. ¿Puede repetirla?');
+ const gl=`<p><a class="btn" target="_blank" href="https://www.google.com/search?q=${enc(q)}">Buscar en Google</a><a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=${enc(q)}">YouTube</a></p>`;
+ const K=keys(q),cand=[q.charAt(0).toUpperCase()+q.slice(1)];
+ const sum=async t=>{try{const r=await fetch('https://es.wikipedia.org/api/rest_v1/page/summary/'+enc(t.replace(/ /g,'_'))+'?redirect=true');if(!r.ok)return null;const p=await r.json();return p.type==='standard'&&p.extract?p:null}catch(e){return null}};
+ const rel=p=>{const h=norm(p.title+' '+p.extract.slice(0,300));return K.length?K.filter(k=>h.includes(k)).length/K.length:0};
+ try{const s=await j(`https://es.wikipedia.org/w/api.php?action=query&list=search&srlimit=4&format=json&origin=*&srsearch=${enc(q)}`);s.query.search.forEach(x=>cand.push(x.title))}catch(e){}
+ let best=null;for(const t of[...new Set(cand)].slice(0,5)){const p=await sum(t);if(p&&rel(p)>=.5){best=p;break}}
+ if(!best){rest=[];card(`<h3>${esc(q)}</h3><p>No encontré una fuente confiable para esta consulta.</p>${gl}`);return speak('No encontré información confiable sobre eso. Dejé la búsqueda en Google disponible en pantalla.')}
+ const ss=best.extract.split(/(?<=[.!?])\s+/);rest=ss.slice(3);
+ card(`<h3>${esc(best.title)}</h3>${best.thumbnail?`<img src="${best.thumbnail.source}">`:''}<p>${esc(best.extract)}</p><p class="sm">Fuente: ${best.content_urls?`<a target="_blank" href="${best.content_urls.desktop.page}">Wikipedia</a>`:'Wikipedia'}${rest.length?' · Diga "continúa" para seguir leyendo':''}</p>${gl}`);
+ return say(ss.slice(0,3))}
+let files=[],dirName='';
+const ic=n=>`<span class="ext">${(n.split(".").pop()||"").slice(0,4).toUpperCase()}</span>`;
+const fl=q=>{const n=norm(q);return files.map((f,i)=>[f,i]).filter(([f])=>norm(f.name).includes(n)).slice(0,150).map(([f,i])=>`<div class="fi" data-i="${i}">${ic(f.name)} ${esc(f.name)}</div>`).join('')};
+function renderFiles(){card(`<h3> ${esc(dirName)} <small>(${files.length})</small></h3><input id="fq" placeholder="Filtrar archivos…" style="width:100%"><div class="fl" id="fl">${fl('')}</div>`);$('fq').oninput=e=>$('fl').innerHTML=fl(e.target.value)}
+async function pickDir(){
+ if(window.showDirectoryPicker){try{const h=await showDirectoryPicker({startIn:'downloads'});files=[];dirName=h.name;
+  for await(const[n,e]of h.entries())if(e.kind==='file')files.push({name:n,get:()=>e.getFile()});files.sort((a,b)=>a.name.localeCompare(b.name));renderFiles();return speak(`Carpeta ${dirName} conectada, con ${files.length} archivos.`)}
+  catch(e){if(e.name==='AbortError')return}}
+ $('fi').click()}
+$('fi').onchange=e=>{files=[...e.target.files].map(f=>({name:f.webkitRelativePath||f.name,get:async()=>f}));dirName=files[0]?files[0].name.split('/')[0]:'Carpeta';renderFiles();speak(`Carpeta conectada, con ${files.length} archivos.`)};
+function showFiles(){if(!files.length){card('<h3> Archivos</h3><p>Pulse el botón <b>Carpeta</b> para darme acceso a una carpeta (por ejemplo, Descargas).</p>');return speak('Pulse el botón Carpeta para darme acceso a su carpeta, '+addr()+'.')}renderFiles();return speak('Aquí están sus archivos, '+addr()+'.')}
+function find(q){const w=norm(q).split(/\s+/).filter(x=>x.length>1);let b=null,bs=0;files.forEach((f,i)=>{const n=norm(f.name),s=w.filter(x=>n.includes(x)).length;if(s>bs){bs=s;b=i}});return b}
+async function openFile(i){const f=await files[i].get(),u=URL.createObjectURL(f),nm=f.name.split('/').pop();
+ if(/\.(pdf|png|jpe?g|gif|webp|svg|txt|mp3|mp4|webm|html?|csv|json)$/i.test(nm))return go(u,nm);
+ const a=document.createElement('a');a.href=u;a.download=nm;a.click();return speak('Ese tipo de archivo no se abre dentro del navegador. Lo descargué para que lo abra con su aplicación.')}
+const R=[],on=(re,fn)=>R.push([re,fn]);
+on(/^(busca|abre|encuentra|muestrame)\s+(el\s+)?archivo\s+(.+)/,async m=>{if(!files.length)return showFiles();const i=find(m[3]);return i===null?speak('No encontré ese archivo en la carpeta conectada.'):openFile(i)});
+on(/^(dime|tratame de|llamame)\s+(jefe|senor|capitan|maestro|comandante|doctor|ingeniero|patron|amo)$/,m=>{cfg.title=m[2]=='senor'?'señor':m[2];save();return speak('De acuerdo. A partir de ahora me dirigiré a usted como '+addr()+'.')});
+on(/(llamame|mi nombre es|me llamo)\s+\S/,(m,t,raw)=>{const x=raw.match(/(?:ll[aá]mame|mi nombre es|me llamo)\s+(.+)/i);if(!x)return;cfg.name=x[1].replace(/[.,!?]+$/,'').replace(/(^|\s)\p{L}/gu,c=>c.toUpperCase());save();return speak('Entendido. A partir de ahora lo llamaré '+addr()+'.')});
+on(/que hora|la hora/,()=>speak('Son las '+new Date().toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'})+'.'));
+on(/que dia es|la fecha|fecha de hoy/,()=>speak('Hoy es '+new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'.'));
+on(/clima|temperatura|llover|lluvia|pronostico|hace calor|hace frio/,(m,t)=>{const c=t.match(/ en ([a-z ]+)$/);return weather(c?c[1].trim():cfg.city)});
+on(/\b(dolar|dolares|euros?|tipo de cambio)\b/,async()=>{const d=await j('https://open.er-api.com/v6/latest/USD'),u=d.rates.MXN,e=u/d.rates.EUR;card(`<h3> Tipo de cambio</h3><p>1 USD = ${u.toFixed(2)} MXN</p><p>1 EUR = ${e.toFixed(2)} MXN</p>`);return speak(`El dólar está en ${u.toFixed(2)} pesos y el euro en ${e.toFixed(2)} pesos.`)});
+on(/(temporizador|cronometro|timer|avisame|recuerdame).*?(\d+)\s*(segundo|minuto|hora)/,m=>{const n=+m[2],u=m[3],ms=n*{segundo:1e3,minuto:6e4,hora:36e5}[u],p=n>1?'s':'';setTimeout(()=>{beep();speak(`${addr()}, el temporizador de ${n} ${u}${p} ha terminado.`)},ms);return speak(`Temporizador de ${n} ${u}${p} iniciado.`)});
+on(/^(anota|apunta|recuerda que|guarda nota|nota)\s+/,(m,t,raw)=>{cfg.notes.push(raw.replace(/^\S+\s+(nota\s+)?(que\s+)?/i,''));save();return speak('Anotado, '+addr()+'.')});
+on(/(mis notas|las notas|ver notas)/,()=>{card(`<h3> Notas</h3>${cfg.notes.map(n=>`<p>• ${esc(n)}</p>`).join('')||'<p>Sin notas.</p>'}`);return speak(cfg.notes.length?`Tiene ${cfg.notes.length} notas.`:'No tiene notas guardadas.')});
+on(/borra (las |mis )?notas/,()=>{cfg.notes=[];save();return speak('Notas eliminadas.')});
+on(/^(cuanto es|calcula|cuanto son)\s+(.+)/,m=>{const e=m[2].replace(/ dividido (por|entre) /g,'/').replace(/ entre /g,'/').replace(/ por | x /g,'*').replace(/ mas /g,'+').replace(/ menos /g,'-').replace(/ elevado a /g,'**').replace(/,/g,'.').replace(/\s/g,'');
+ if(!/^[\d+\-*/().]+$/.test(e))return speak('No pude interpretar esa operación.');let r;try{r=Function('return '+e)()}catch(x){return speak('Operación inválida.')}
+ r=Math.round(r*1e6)/1e6;card(`<h3> ${esc(e)}</h3><div class="big">${r}</div>`);return speak('El resultado es '+r+'.')});
+on(/^traduce\s+(.+?)\s+al?\s+(ingles|frances|aleman|italiano|portugues|espanol)$/,async(m,t,raw)=>{const L={ingles:'en',frances:'fr',aleman:'de',italiano:'it',portugues:'pt',espanol:'es'}[m[2]],x=raw.replace(/^traduce\s+/i,'').replace(/\s+al?\s+\S+$/i,'');
+ const d=await j(`https://api.mymemory.translated.net/get?q=${enc(x)}&langpair=es|${L}`),r=d.responseData.translatedText;card(`<h3> ${esc(m[2])}</h3><p>${esc(x)}</p><div style="font-size:22px;color:#fff">${esc(r)}</div>`);return speak(r,L)});
+on(/^(activa|enciende|prende|inicia|abre|muestra)\s+(la\s+)?(camara|gestos|sensores)/,()=>camOn());
+on(/^(apaga|desactiva|deten|cierra|oculta)\s+(la\s+)?(camara|gestos|sensores)/,async()=>{camOff();return speak('Sensores de gestos desactivados.')});
+on(/^(llevame|como llego|como llegar|ruta|navega|direcciones)\b\s*(?:a la|al|a|hacia|para)?\s*(.+)/,m=>go('https://www.google.com/maps/dir/?api=1&destination='+enc(m[2]),'la ruta a '+m[2]));
+on(/^(mapa de|donde queda|donde esta|muestrame en el mapa)\s+(.+)/,m=>go('https://www.google.com/maps/search/?api=1&query='+enc(m[2]),'el mapa de '+m[2]));
+on(/^(pon|ponme|reproduce|toca)\s+(musica de |la cancion |el video de |el video |musica |)(.+)/,m=>go('https://www.youtube.com/results?search_query='+enc(m[3]),'YouTube: '+m[3]));
+on(/^(abre|abrir|abreme|ejecuta|inicia|lanza|arranca|vete a|ve a|ir a|entra a)\s+(.+)/,async m=>{
+ const x=m[2].replace(/^(el|la|los|las|mi|mis|un|una|pagina de|aplicacion de|app de)\s+/,'');
+ if(/^(descargas|archivos|carpeta|documentos)/.test(x))return showFiles();
+ for(const k in cfg.apps)if(x.includes(k))return go(cfg.apps[k],k);
+ const web=/\b(en linea|web|online)\b/.test(x);
+ for(const[re,u,l]of APPS)if(new RegExp('\\b'+re+'\\b').test(x))return go(web&&WEB[l]?WEB[l]:u,l);
+ const i=files.length?find(x):null;if(i!==null)return openFile(i);
+ const d=x.match(/[\w-]+\.(com|mx|org|net|io|edu|gob)\b\S*/);if(d)return go('https://'+d[0],d[0]);
+ await speak('No reconozco esa aplicación. La busco en Google.');return go('https://www.google.com/search?q='+enc(x),'Google')});
+on(/^(continua|sigue|sigue leyendo|lee mas|mas informacion)$/,()=>rest.length?say(rest.splice(0,3)):speak('No hay más información pendiente sobre ese tema.'));
+on(/^(busca|buscar|investiga|googlea|averigua|define|que es|que son|que significa|quien es|quien fue|quienes|hablame|cuentame|explicame|como funciona|como funcionan|para que sirve|cual es|cuales son|dime que|dime quien|informacion)\b/,async(m,t,raw)=>{
+ const g=/\ben google\b/.test(t),y=/\ben youtube\b/.test(t),q=cleanQ(raw.replace(/\b(en|con) (google|youtube)\b/i,''));
+ if(y)return go('https://www.youtube.com/results?search_query='+enc(q),'YouTube');
+ if(g)go('https://www.google.com/search?q='+enc(q),'Google');return wiki(q)});
+on(/chiste/,()=>speak(['¿Por qué los programadores confunden Halloween con Navidad? Porque 31 de octubre es igual a 25 de diciembre.','Mi código funciona, y no sé por qué. Mi código no funciona, y tampoco sé por qué.','Un SQL entra a un bar, se acerca a dos mesas y pregunta: ¿puedo unirme?'][Math.random()*3|0]));
+on(/estado del sistema|bateria|como estas|diagnostico/,async()=>{let b='';try{const x=await navigator.getBattery();b=` Batería al ${Math.round(x.level*100)} por ciento${x.charging?', cargando':''}.`}catch(e){}return speak(`Todos los sistemas operan correctamente, ${addr()}.${navigator.onLine?' Conexión a internet activa.':' Sin conexión a internet.'}${b}`)});
+on(/pantalla completa/,()=>{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();return speak('Pantalla completa.')});
+on(/(modo|color|tema)\s+(rojo|azul|verde|naranja|morado|dorado)/,m=>{cc={rojo:'#ff3b3b',azul:'#5cc8ff',verde:'#39ff88',naranja:'#ff9c1a',morado:'#b266ff',dorado:'#ffd24a'}[m[2]];document.documentElement.style.setProperty('--c',cc);return speak('Interfaz en '+m[2]+'.')});
+on(/ayuda|comandos|que puedes hacer/,()=>{help();return speak('Estos son mis comandos, '+addr()+'.')});
+on(/^(gracias|muchas gracias)/,()=>speak('Para eso estoy, '+addr()+'.'));
+on(/quien eres|como te llamas/,()=>speak('Soy Tars, su asistente personal. Escucho su voz, veo sus gestos, consulto internet y abro sus aplicaciones, '+addr()+'.'));
+on(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey)\b/,()=>speak(greet()+', '+addr()+'. ¿En qué puedo ayudarle?'));
+function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Identidad</b><br>"Llámame Roberto Carlos", "dime jefe"</p><p class="sm"><b>Consultas</b><br>"Qué es la fibra óptica", "quién fue Tesla", "busca ...", "continúa" (sigue leyendo), "clima", "clima en Madrid", "dólar", "traduce hola al inglés"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / PowerPoint / Outlook / WhatsApp / Spotify / calculadora / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Palma 1 s: esta ayuda · Puño: callar · Paz: Google · Pulgar: confirmar</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
+$('panel').onclick=e=>{const f=e.target.closest('.fi');if(f)openFile(+f.dataset.i);
+ if(e.target.id==='addApp'){const n=norm($('an').value),u=$('au').value.trim();if(n&&u){cfg.apps[n]=u;save();speak(`Acceso "${n}" guardado. Diga: abre ${n}.`)}}};
+const WK='(tars|tarz|tarce|tarse|tarts|tarzan|tarsan)';
+async function handle(raw,voice){raw=raw.trim();if(!raw)return;
+ if(voice&&cfg.wake&&!new RegExp('\\b'+WK+'\\b','i').test(raw))return;
+ raw=raw.replace(new RegExp('^(oye |hey )?'+WK+'[,.\\s]*','i'),'');if(!raw)return speak('A sus órdenes, '+addr()+'.');
+ $('heard').textContent=raw;log('U',raw);const t=norm(raw);
+ try{for(const[re,fn]of R){const m=t.match(re);if(m){await fn(m,t,raw);return}}
+  if(t.split(/\s+/).length<2||!keys(t).length)return;await wiki(cleanQ(raw))}
+ catch(e){console.error(e);speak('Tuve un problema con esa solicitud, '+addr()+'. Verifique su conexión e intente de nuevo.')}}
+let hands,cam=false,stream,cc='#5cc8ff',hv=null,hold={g:'',n:0},cool=0,gcool=0,pinched=false,cx=innerWidth/2,cy=innerHeight/2,lastG='';
+const GN={pinch:'Pinza: clic',open:'Palma: comandos',peace:'Paz: Google',point:'Índice: cursor',fist:'Puño: callar',thumb:'Pulgar: confirmar'};
+async function camOn(q){if(cam)return q?0:speak('La cámara ya está activa.');
+ if(!window.Hands)return speak('No pude cargar el módulo de gestos. Verifique su conexión a internet.');
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}})}catch(e){return q?($('heard').textContent='Cámara no disponible: permita el acceso'):speak('No tengo acceso a la cámara.')}
+ const v=$('vid');$('cam').classList.add('on');v.srcObject=stream;await v.play();
+ hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});
+ hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.7,minTrackingConfidence:.6});hands.onResults(onHand);
+ cam=true;$('cam').classList.add('on');$('camB').classList.add('on');$('iC').classList.add('on');
+ (async function L(){if(!cam)return;try{await hands.send({image:v})}catch(e){}requestAnimationFrame(L)})();
+ if(!q)return speak('Sensores de gestos en línea.')}
+function camOff(){cam=false;if(stream)stream.getTracks().forEach(t=>t.stop());try{hands&&hands.close()}catch(e){}hands=null;$('cam').classList.remove('on');$('camB').classList.remove('on');$('iC').classList.remove('on');$('cur').style.display='none';$('gest').textContent=''}
+function onHand(r){const ov=$('ov'),ox=ov.getContext('2d');ov.width=r.image.width;ov.height=r.image.height;ox.clearRect(0,0,ov.width,ov.height);
+ const L=r.multiHandLandmarks&&r.multiHandLandmarks[0],cur=$('cur');
+ if(!L){setG('');cur.style.display='none';hold={g:'',n:0};return}
+ ox.fillStyle=cc;L.forEach(p=>{ox.beginPath();ox.arc(p.x*ov.width,p.y*ov.height,3,0,7);ox.fill()});
+ const D=(a,b)=>Math.hypot(L[a].x-L[b].x,L[a].y-L[b].y),sz=D(0,9),ex=(t,p)=>D(0,t)>D(0,p)*1.05;
+ const i=ex(8,6),m=ex(12,10),rg=ex(16,14),p=ex(20,18),th=D(4,5)>sz*.7;let g='';
+ if(D(4,8)/sz<.3)g='pinch';else if(i&&m&&rg&&p)g='open';else if(i&&m&&!rg&&!p)g='peace';else if(i&&!m&&!rg&&!p)g='point';else if(!i&&!m&&!rg&&!p)g=th?'thumb':'fist';
+ hold=g===hold.g?{g,n:hold.n+1}:{g,n:1};setG(g);const now=Date.now();
+ if(g==='point'||g==='pinch'){cur.style.display='block';
+  if(g==='point'){const nx=Math.min(1,Math.max(0,(1-L[8].x-.5)*1.6+.5)),ny=Math.min(1,Math.max(0,(L[8].y-.5)*1.6+.5));cx+=(nx*innerWidth-cx)*.35;cy+=(ny*innerHeight-cy)*.35}
+  cur.style.transform=`translate(${cx}px,${cy}px)`;cur.classList.toggle('p',g==='pinch');
+  const e=document.elementFromPoint(cx,cy),b=e&&e.closest('button,.fi,a');if(hv!==b){hv&&hv.classList.remove('hv');b&&b.classList.add('hv');hv=b}
+  if(g==='pinch'&&!pinched&&now>cool){pinched=true;cool=now+700;if(e){e.click();e.focus&&e.focus()}}}
+ else cur.style.display='none';
+ if(g!=='pinch')pinched=false;
+ if(hold.n===18&&now>gcool){gcool=now+2500;
+  if(g==='open')help();
+  else if(g==='fist'){speechSynthesis.cancel()}
+  else if(g==='peace')go('https://www.google.com','Google');
+  else if(g==='thumb')speak('Entendido, '+addr()+'.')}}
+function setG(g){if(g!==lastG){lastG=g;$('gest').textContent=GN[g]||''}}
+const oc=$('orb'),o=oc.getContext('2d');let ph=0;
+(function draw(){ph+=.01;o.clearRect(0,0,600,600);
+ const a=state==='speak'?8+Math.sin(ph*30)*6+Math.random()*8:state==='listen'?4+Math.sin(ph*6)*3:2;
+ o.strokeStyle=cc;o.shadowColor=cc;o.shadowBlur=6;
+ o.setLineDash([2,10]);o.lineWidth=2;o.globalAlpha=.5;o.beginPath();o.arc(300,300,265,ph,ph+7);o.stroke();o.setLineDash([]);
+ for(let k=0;k<5;k++){o.lineWidth=k==2?5:2;o.globalAlpha=.9-k*.12;const r=70+k*38+a*(k%2?-1:1)*.6,s=ph*(k%2?-1:1)*(1+k*.3);
+  o.beginPath();o.arc(300,300,r,s,s+Math.PI*(1.2+k*.1));o.stroke();o.beginPath();o.arc(300,300,r,s+Math.PI*1.4,s+Math.PI*1.9);o.stroke()}
+ o.globalAlpha=1;const g=o.createRadialGradient(300,300,4,300,300,60+a);g.addColorStop(0,'#fff');g.addColorStop(.35,cc);g.addColorStop(1,'transparent');
+ o.fillStyle=g;o.beginPath();o.arc(300,300,60+a,0,7);o.fill();requestAnimationFrame(draw)})();
+setInterval(()=>$('clk').textContent=new Date().toLocaleTimeString('es-MX'),1000);
+navigator.getBattery&&navigator.getBattery().then(b=>{const u=()=>$('bat').textContent='Batería '+Math.round(b.level*100)+'%'+(b.charging?' · carga':'');u();b.onlevelchange=b.onchargingchange=u});
+$('cName').value=cfg.name;$('cTitle').value=cfg.title;$('cCity').value=cfg.city;$('cWake').checked=cfg.wake;
+$('go').onclick=()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;save();$('boot').style.display='none';
+ if(window.speechSynthesis)speechSynthesis.getVoices();startRec();camOn(true);
+ speak(first?`${greet()}, ${addr()}. Sistemas en línea. Diga "ayuda" para ver mis comandos. ¿En qué puedo servirle?`:`Configuración guardada. Lo llamaré ${addr()}.`);first=false;help()};
+const net=()=>$('iN').classList.toggle('on',navigator.onLine);net();addEventListener('online',net);addEventListener('offline',net);setInterval(()=>{if(speaking&&!speechSynthesis.speaking){speaking=false;setState(listening?'listen':'idle')}if(listening&&!rec)startRec()},3000);
+$('cfgB').onclick=()=>$('boot').style.display='grid';
+$('micB').onclick=()=>listening?stopRec():startRec();
+$('camB').onclick=()=>cam?camOff():camOn();
+$('dirB').onclick=pickDir;$('helpB').onclick=()=>{help()};
+$('f').onsubmit=e=>{e.preventDefault();const v=$('txt').value;$('txt').value='';handle(v,false)};
+</script></body></html>
