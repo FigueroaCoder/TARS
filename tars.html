@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ROCAFI</title>
+<title>ROCA</title>
 <style>
 :root{--c:#5cc8ff;color-scheme:dark}
 *{box-sizing:border-box;margin:0}
@@ -41,26 +41,29 @@ section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-dir
 .ext{display:inline-block;min-width:42px;font-size:10px;color:var(--c);letter-spacing:.08em}
 #cur{position:fixed;left:-14px;top:-14px;width:28px;height:28px;border:2px solid var(--c);border-radius:50%;pointer-events:none;display:none;z-index:20}#cur.p{background:var(--c)}
 #cur{z-index:40}#cam{z-index:35}
+.ytb{border:1px solid var(--c);padding:8px 10px;margin:6px 0;color:#e6eef6}.ytb:before{content:'🔎 '}.mi{display:flex;gap:6px;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a2836}.mi button{padding:0 8px}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:4px;clear:both;margin:8px 0}.gal img{float:none;margin:0;width:100%;height:74px;max-height:none;object-fit:cover;cursor:pointer;border:1px solid #1a2836}.gal img.hv,.gal img:hover{border-color:var(--c)}
 .or{padding:5px 0;border-bottom:1px solid #1a2836}.or b{color:#e6eef6}
 #lb{display:none;position:fixed;inset:0;z-index:30;background:#05090ef2;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:16px}#lb.on{display:flex}
 #lb img{float:none;margin:0;max-width:92vw;max-height:70vh}#lbc{color:#e6eef6;font-size:14px;text-align:center;max-width:80vw}.lbr{display:flex;gap:10px}.lbr button{font-size:20px;padding:12px 26px}
+#panel ul{margin:4px 0 6px 18px}#panel li{margin:3px 0}#panel code{background:#0f1a25;padding:0 4px;border-radius:2px}#panel i{color:#9fb2c4}
 @media(max-width:900px){main{grid-template-columns:1fr;overflow:auto}html,body{overflow:auto}#orb{max-width:300px}}
 </style></head><body>
-<div id="boot"><div class="box"><h1>ROCAFI</h1><div class="sub">Sistema de asistencia personal</div>
+<div id="boot"><div class="box"><h1>ROCA</h1><div class="sub">Sistema de asistencia personal</div>
 <label>¿Cómo debo llamarlo?<input id="cName" placeholder="Roberto Carlos"></label>
 <label>Tratamiento (jefe, señor, capitán…)<input id="cTitle" placeholder="jefe"></label>
 <label>Ciudad para el clima (vacío = mi ubicación)<input id="cCity" placeholder="Guadalajara"></label>
-<label class="chk"><input type="checkbox" id="cWake"> Exigir la palabra "ROCAFI" para obedecer</label>
+<label>API Key de Gemini (IA) · vacío = llave integrada<input id="cKey" type="password" placeholder="AQ.… / AIza…" autocomplete="off"></label>
+<label class="chk"><input type="checkbox" id="cWake"> Exigir la palabra "ROCA" para obedecer</label>
 <div id="diag" class="sub" style="text-transform:none;letter-spacing:0;line-height:1.5;color:var(--c)"></div><button id="go">INICIAR SISTEMAS</button></div></div>
 <div id="app">
-<header><b>ROCAFI</b><span class="ind" id="iM"><i></i>MICRÓFONO <span id="lvlw"><span id="lvl"></span></span></span><span class="ind" id="iC"><i></i>CÁMARA</span><span class="ind" id="iN"><i></i>RED</span><span class="ind" id="st">EN ESPERA</span><span id="bat"></span><span id="clk"></span><button id="cfgB">Configuración</button></header>
+<header><b>ROCA</b><span class="ind" id="iM"><i></i>MICRÓFONO <span id="lvlw"><span id="lvl"></span></span></span><span class="ind" id="iC"><i></i>CÁMARA</span><span class="ind" id="iN"><i></i>RED</span><span class="ind" id="iA"><i></i>IA</span><span class="ind" id="st">EN ESPERA</span><span id="bat"></span><span id="clk"></span><button id="cfgB">Configuración</button></header>
 <main>
 <section><div class="t">Registro de operaciones</div><div id="log"></div><form id="f"><input id="txt" placeholder="Escriba un comando..." autocomplete="off"><button>Enviar</button></form></section>
 <section id="mid"><canvas id="orb" width="600" height="600"></canvas><div id="heard"></div><div id="gest"></div></section>
 <section><div class="t">Información</div><div id="panel"></div></section>
 </main>
-<footer><button id="micB">Micrófono</button><button id="camB">Cámara</button><button id="dirB">Carpeta</button><button id="helpB">Comandos</button></footer>
+<footer><button id="micB">Micrófono</button><button id="camB">Cámara</button><button id="dirB">Carpeta</button><button id="helpB">Comandos</button><button id="memB">Memoria</button></footer>
 </div>
 <div id="cam"><video id="vid" playsinline muted></video><canvas id="ov"></canvas></div>
 <div id="lb"><img id="lbi" alt=""><div id="lbc"></div><div class="lbr"><button id="lbp">‹</button><button id="lbx">✕</button><button id="lbn">›</button></div></div><div id="cur"></div><input type="file" id="fi" webkitdirectory multiple hidden>
@@ -70,7 +73,7 @@ const $=s=>document.getElementById(s),enc=encodeURIComponent;
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const j=async u=>(await fetch(u)).json();
-let cfg={name:'',title:'jefe',city:'',wake:false,notes:[],apps:{}};
+let cfg={name:'',title:'jefe',city:'',wake:false,notes:[],apps:{},gkey:''};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem('jv')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('jv',JSON.stringify(cfg))}catch(e){}};
 const addr=()=>[cfg.title,cfg.name].filter(Boolean).join(' ')||'jefe';
@@ -97,7 +100,7 @@ function startRec(){
  rec=new SR();rec.lang='es-MX';rec.continuous=true;rec.interimResults=true;
  let stp=false;
  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],x=r[0].transcript,nx=norm(x);
-  if(nx.split(/\s+/).length<=4&&/^((rocafi|roca fi|oye|hey|ya) )*(detente|deten|detener|alto|basta|silencio|callate|cancela|stop|espera)\b/.test(nx)){if(!stp){stp=true;interrupt()}if(r.isFinal)stp=false;continue}
+  if(nx.split(/\s+/).length<=4&&/^((roca|roca fi|oye|hey|ya) )*(detente|deten|detener|alto|basta|silencio|callate|cancela|stop|espera)\b/.test(nx)){if(!stp){stp=true;interrupt()}if(r.isFinal)stp=false;continue}
   if((speaking&&speechSynthesis.speaking)||Date.now()-lastEnd<700)continue;$('heard').textContent=x;if(r.isFinal)handle(x,true)}};
  rec.onend=()=>{rec=null;if(listening)setTimeout(startRec,300)};
  rec.onerror=e=>{if(/not-allowed/.test(e.error)){listening=false;$('micB').classList.remove('on');$('iM').classList.remove('on');setState('idle');card('<h3>Micrófono bloqueado</h3><p>Pulse el candado junto a la dirección, permita micrófono y cámara, y recargue la página.</p><p class="sm">Si abre el archivo directamente (file://), Chrome puede volver a preguntar en cada inicio. Es más estable abrirlo desde http://localhost.</p>');speak('Necesito permiso para usar el micrófono.')}else if(!['no-speech','aborted'].includes(e.error))$('heard').textContent='Error de voz: '+e.error};
@@ -153,20 +156,20 @@ async function weather(city){let lat,lon,name=city;
  const c=w.current,d=w.daily,ds=WC[c.weather_code]||'variable',R=Math.round;
  card(`<h3> ${esc(name)}</h3><div class="big">${R(c.temperature_2m)}°C</div><p>${ds}</p><p>Sensación ${R(c.apparent_temperature)}° · Humedad ${c.relative_humidity_2m}% · Viento ${R(c.wind_speed_10m)} km/h</p><p>Máx ${R(d.temperature_2m_max[0])}° · Mín ${R(d.temperature_2m_min[0])}° · Lluvia ${d.precipitation_probability_max[0]}%</p>`);
  return speak(`En ${name} hay ${R(c.temperature_2m)} grados, ${ds}. Máxima de ${R(d.temperature_2m_max[0])} y mínima de ${R(d.temperature_2m_min[0])}, con ${d.precipitation_probability_max[0]} por ciento de probabilidad de lluvia.`)}
-const STOP=new Set('el la los las un una de del al y o en que es son fue sobre acerca para por con me te se lo le mas muy como cual cuales quien quienes donde cuando puedes puede podrias decir dime explica explicame cuentame hablame informacion investiga busca buscar averigua favor rocafi roca'.split(' '));
+const STOP=new Set('el la los las un una de del al y o en que es son fue sobre acerca para por con me te se lo le mas muy como cual cuales quien quienes donde cuando puedes puede podrias decir dime explica explicame cuentame hablame informacion investiga busca buscar averigua favor roca roca'.split(' '));
 const keys=q=>norm(q).split(/[^a-z0-9ñ]+/).filter(w=>w.length>2&&!STOP.has(w));
-function cleanQ(raw){return raw.replace(/^(por favor[,\s]*)?(oye |hey )?(rocafi[,\s]*)?/i,'').replace(/^(me\s+)?(puedes|podrias|puede)\s+(decir|explicar|buscar|investigar)(me)?\s*/i,'').replace(/^(dime|d[ií]game|expl[ií]came|cu[eé]ntame|h[aá]blame|busca|buscar|investiga|googlea|averigua|define)\s*/i,'').replace(/^(qu[eé]|qui[eé]n(es)?|cu[aá]l(es)?|d[oó]nde|cu[aá]ndo|c[oó]mo|para qu[eé])\s+(es|son|fue|fueron|est[aá]n?|queda|funciona|funcionan|sirve|sirven|significa)?\s*/i,'').replace(/^(informaci[oó]n |datos |todo )?(de |del |sobre |acerca de |en internet |en google )+/i,'').replace(/^(el|la|los|las|un|una)\s+/i,'').replace(/[?¿!¡.,]+/g,'').trim()}
+function cleanQ(raw){return raw.replace(/^(por favor[,\s]*)?(oye |hey )?(roca[,\s]*)?/i,'').replace(/^(me\s+)?(puedes|podrias|puede)\s+(decir|explicar|buscar|investigar)(me)?\s*/i,'').replace(/^(dime|d[ií]game|expl[ií]came|cu[eé]ntame|h[aá]blame|busca|buscar|investiga|googlea|averigua|define)\s*/i,'').replace(/^(qu[eé]|qui[eé]n(es)?|cu[aá]l(es)?|d[oó]nde|cu[aá]ndo|c[oó]mo|para qu[eé])\s+(es|son|fue|fueron|est[aá]n?|queda|funciona|funcionan|sirve|sirven|significa)?\s*/i,'').replace(/^(informaci[oó]n |datos |todo )?(de |del |sobre |acerca de |en internet |en google )+/i,'').replace(/^(el|la|los|las|un|una)\s+/i,'').replace(/[?¿!¡.,]+/g,'').trim()}
 let rest=[];
 const jt=async(u,ms=7000)=>{const c=new AbortController(),x=setTimeout(()=>c.abort(),ms);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw 0;return await r.json()}finally{clearTimeout(x)}};
 const wp=async(l,q)=>{const d=await jt(`https://${l}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${enc(q)}&gsrlimit=6&prop=extracts|pageimages|info&exintro=1&explaintext=1&exlimit=max&piprop=thumbnail&pithumbsize=520&inprop=url&format=json&origin=*`);return Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract)};
 const cm=async(q,n)=>{const d=await jt(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(q)}&gsrlimit=${n}&prop=imageinfo&iiprop=url|mime&iiurlwidth=480&format=json&origin=*`);return Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>a.index-b.index).map(p=>{const i=p.imageinfo&&p.imageinfo[0];return i&&/image\/(jpeg|png|webp)/.test(i.mime)&&i.thumburl?{u:i.thumburl,c:p.title.replace(/^File:/,'').replace(/\.\w+$/,'').replace(/_/g,' ')}:null}).filter(Boolean)};
-const dd=q=>jt('https://api.duckduckgo.com/?format=json&no_html=1&skip_disambig=1&t=rocafi&q='+enc(q));
+const dd=q=>jt('https://api.duckduckgo.com/?format=json&no_html=1&skip_disambig=1&t=roca&q='+enc(q));
 const sents=s=>s.replace(/\s+/g,' ').split(/(?<=[.!?])\s+/).filter(Boolean);
 async function readLong(a,l='es-MX'){const k=++tok;lastAns={a,l};lastLang=l;log('J',a.join(' ').slice(0,300));for(const s of a){if(k!==tok)break;await speak(s,l,true)}}
 const cont=()=>rest.length?readLong(rest.splice(0,4),lastLang):speak('Eso es todo lo que tengo sobre ese tema, '+addr()+'.');
 const repeat=()=>lastAns?readLong(lastAns.a,lastAns.l):speak('Aún no tengo nada que repetir.');
 function chime(){try{const a=new AudioContext(),o=a.createOscillator(),g=a.createGain();g.gain.value=.05;o.connect(g);g.connect(a.destination);o.frequency.value=660;o.start();setTimeout(()=>{o.stop();a.close()},130)}catch(e){}}
-function interrupt(){tok++;try{speechSynthesis.cancel()}catch(e){}speaking=false;lastEnd=Date.now()-300;setState(listening?'listen':'idle');$('heard').textContent='Detenido. Lo escucho…';chime();if(rec&&listening){try{rec.abort()}catch(e){}}else if(!listening&&SR)startRec()}
+function interrupt(){ytSend('pauseVideo');tok++;try{speechSynthesis.cancel()}catch(e){}speaking=false;lastEnd=Date.now()-300;setState(listening?'listen':'idle');$('heard').textContent='Detenido. Lo escucho…';chime();if(rec&&listening){try{rec.abort()}catch(e){}}else if(!listening&&SR)startRec()}
 function clickCur(){if(!cam)return speak('Active la cámara y señale con el índice.');const e=document.elementFromPoint(cx,cy);if(e)e.click()}
 const scrollP=d=>$('panel').scrollBy({top:d*$('panel').clientHeight*.7,behavior:'smooth'});
 function openLb(k){if(!imgs.length)return speak('No hay imágenes en pantalla.');lbI=(k+imgs.length)%imgs.length;$('lbi').src=imgs[lbI].u;$('lbc').textContent=imgs[lbI].c+' ('+(lbI+1)+'/'+imgs.length+')';$('lb').classList.add('on');speak(imgs[lbI].c.slice(0,90))}
@@ -174,11 +177,44 @@ function lbNav(d){if(!$('lb').classList.contains('on'))return openLb(d>0?0:imgs.
 function closeLb(){$('lb').classList.remove('on')}
 $('lbp').onclick=()=>lbNav(-1);$('lbn').onclick=()=>lbNav(1);$('lbx').onclick=closeLb;
 const googleLast=()=>go(lastQ?'https://www.google.com/search?q='+enc(lastQ):'https://www.google.com','Google');
+
+const MK='roca_mem';let mem=[],fh=null,fT=0;try{mem=JSON.parse(localStorage.getItem(MK)||'[]')}catch(e){}
+const txt=()=>mem.map(m=>m.d.slice(0,16).replace('T',' ')+' | '+m.x).join('\n');
+async function fileSave(){if(!fh)return;try{if(await fh.queryPermission({mode:'readwrite'})!=='granted')return;const w=await fh.createWritable();await w.write(txt());await w.close()}catch(e){}}
+function persist(){try{localStorage.setItem(MK,JSON.stringify(mem.slice(-3000)))}catch(e){}clearTimeout(fT);fT=setTimeout(fileSave,400)}
+function remember(x){x=x.trim();if(x.length<3)return;mem.push({d:new Date().toISOString(),x});persist()}
+function mergeTxt(s){s.split('\n').forEach(l=>{const i=l.indexOf(' | ');const x=(i>0?l.slice(i+3):l).trim();if(x&&!mem.some(m=>m.x===x))mem.push({d:i>0?l.slice(0,i).replace(' ','T'):new Date().toISOString(),x})});persist()}
+const idb=(m,v)=>new Promise(r=>{try{const q=indexedDB.open('roca',1);q.onupgradeneeded=()=>q.result.createObjectStore('k');q.onsuccess=()=>{const s=q.result.transaction('k',m=='get'?'readonly':'readwrite').objectStore('k'),x=m=='get'?s.get('fh'):s.put(v,'fh');x.onsuccess=()=>r(x.result);x.onerror=()=>r()};q.onerror=()=>r()}catch(e){r()}});
+idb('get').then(async h=>{if(!h)return;fh=h;try{if(await h.queryPermission({mode:'readwrite'})==='granted')mergeTxt(await(await h.getFile()).text())}catch(e){}});
+async function linkTxt(){try{if(fh){await fh.requestPermission({mode:'readwrite'});mergeTxt(await(await fh.getFile()).text())}else{fh=await showSaveFilePicker({suggestedName:'roca_memoria.txt',types:[{accept:{'text/plain':['.txt']}}]});await idb('set',fh);try{mergeTxt(await(await fh.getFile()).text())}catch(e){}}await fileSave();memCard()}catch(e){}}
+function memCard(){card(`<h3>Memoria</h3><p><button id="lnk">${fh?'Reconectar TXT':'Vincular TXT'}</button> <button id="dlt">Descargar TXT</button> <button id="clr">Borrar todo</button></p>`+(mem.length?mem.slice(-40).map((m,i)=>`<div class="mi"><span class="sm">${esc(m.x)}</span><button class="mx" data-i="${mem.length-Math.min(40,mem.length)+i}">✕</button></div>`).join(''):'<p class="sm">Sin datos todavía.</p>'))}
+$('panel').addEventListener('click',e=>{const x=e.target.closest('.mx');if(x){mem.splice(+x.dataset.i,1);persist();return memCard()}const b=e.target.id;if(b=='lnk')linkTxt();if(b=='dlt'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt()],{type:'text/plain'}));a.download='roca_memoria.txt';a.click()}if(b=='clr'){mem=[];persist();memCard()}});
+$('memB').onclick=memCard;
+const QW=/^(que|quien|quienes|como|cual|cuales|donde|cuando|cuanto|cuantos|cuanta|por que|para que|sabes|recuerdas|puedes|podrias|dime|dame|cuentame|me (puedes|podrias|dices|ayudas))\b/;
+const isQ=x=>/\?/.test(x)||QW.test(norm(x));
+const STM=/^(mi |mis |me |yo |soy |tengo |vivo |trabajo |estoy |naci |estudio |tu |eres |te llamas |hoy |ayer |manana |siempre |nunca |a mi |nuestro )/;
+const PR={mi:'tu',mis:'tus',me:'te',yo:'tú',soy:'eres',estoy:'estás',tengo:'tienes',vivo:'vives',trabajo:'trabajas',estudio:'estudias','nací':'naciste',naci:'naciste',quiero:'quieres',juego:'juegas',uso:'usas',llamo:'llamas',conmigo:'contigo',tu:'mi',tus:'mis',te:'me',eres:'soy',tienes:'tengo',creaste:'creé',llamas:'llamo'};
+const tf=s=>{const r=s.replace(/[.!?¿¡]+/g,' ').replace(/\s+/g,' ').trim().replace(/[A-Za-zÁÉÍÓÚáéíóúñÑ]+/g,w=>PR[w.toLowerCase()]||w);return r.charAt(0).toUpperCase()+r.slice(1)+'.'};
+function recall(q){const t=norm(q),K=keys(q),nm=/(como me llamo|cual es mi nombre|quien soy|sabes quien soy|sabes mi nombre)/.test(t);let best=null,bs=0;
+ for(const m of mem.filter(m=>!isQ(m.x)).reverse()){const lk=keys(m.x),ov=K.filter(k=>lk.some(l=>l.includes(k)||k.includes(l))).length;let s=K.length?ov/K.length:0;if(nm&&/(me llamo|mi nombre)/.test(norm(m.x)))s=1;if(s>bs){bs=s;best=m}}
+ return best&&bs>=.5?tf(best.x):null}
+const ytSend=f=>{const e=$('ytf');e&&e.contentWindow&&e.contentWindow.postMessage(JSON.stringify({event:'command',func:f,args:[]}),'*')};
+const ytSrc=q=>{const Q=enc(q),P=h=>jt(`https://${h}/search?q=${Q}&filter=videos`,6000).then(d=>{const x=(d.items||[]).find(i=>/watch\?v=/.test(i.url||''));if(!x)throw 0;return x.url.split('v=')[1].slice(0,11)}),I=h=>jt(`https://${h}/api/v1/search?q=${Q}&type=video`,6000).then(d=>{const x=(Array.isArray(d)?d:[]).find(i=>i.videoId);if(!x)throw 0;return x.videoId}),J=()=>Promise.race([fetch('https://r.jina.ai/https://www.youtube.com/results?search_query='+Q).then(r=>r.text()).then(s=>{const m=s.match(/watch\?v=([\w-]{11})/);if(!m)throw 0;return m[1]}),new Promise((_,r)=>setTimeout(r,8000))]);return[P('pipedapi.kavin.rocks'),P('pipedapi.adminforge.de'),P('api.piped.private.coffee'),I('inv.nadeko.net'),I('yewtu.be'),I('invidious.nerdvpn.de'),J()]};
+async function ytPlay(q){q=q.replace(/\s+(en|con|desde)\s+youtube\s*$/i,'').trim();if(!q)return go('https://www.youtube.com','YouTube');
+ const R=`https://www.youtube.com/results?search_query=${enc(q)}`;card(`<h3>YouTube</h3><div class="ytb"><span id="ytq"></span></div><p class="sm">Buscando…</p>`);
+ let i=0;const e=$('ytq'),iv=setInterval(()=>{e.textContent=q.slice(0,++i);if(i>=q.length)clearInterval(iv)},45);
+ let id=null;try{id=await Promise.any(ytSrc(q))}catch(x){}clearInterval(iv);
+ if(!id){card(`<h3>YouTube</h3><div class="ytb">${esc(q)}</div><p><a class="btn" target="_blank" href="${R}">Abrir resultados</a></p>`);window.open(R,'_blank');return speak('Abrí la búsqueda de '+q+' en YouTube.')}
+ card(`<h3>YouTube</h3><div class="ytb">${esc(q)}</div><iframe id="ytf" style="width:100%;aspect-ratio:16/9;border:0" src="https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&playsinline=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><p><a class="btn" target="_blank" href="https://www.youtube.com/watch?v=${id}">Abrir en YouTube</a><a class="btn" target="_blank" href="${R}">Más resultados</a></p><p class="sm">Si el video no inicia, abra este archivo desde http://localhost o use "Abrir en YouTube".</p>`)}
+const snips=s=>{const seen=new Set(),o=[];for(let l of s.split('\n')){l=l.replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/https?:\/\/\S+/g,'').replace(/[*#>_`|]/g,' ').replace(/\s+/g,' ').trim();if(l.length<70||l.length>420||l.split(' ').length<10)continue;if(/cookies|iniciar sesi|accesibilidad|privacidad|condiciones|configuraci|resultados de b|ver más|traducir esta|url source|markdown content|title:/i.test(l))continue;const k=l.slice(0,40);if(seen.has(k))continue;seen.add(k);o.push(l);if(o.length>=5)break}return o};
+async function webInfo(q){const bad=/enablejs|unusual traffic|captcha|consent\.google|Before you continue|Antes de ir a Google/i;
+ for(const u of[`https://r.jina.ai/https://www.google.com/search?q=${enc(q)}&hl=es&gl=mx`,`https://r.jina.ai/https://html.duckduckgo.com/html/?q=${enc(q)}&kl=mx-es`]){try{const c=new AbortController(),x=setTimeout(()=>c.abort(),8000);const r=await fetch(u,{signal:c.signal});clearTimeout(x);const s=await r.text();if(!r.ok||bad.test(s))continue;const o=snips(s);if(o.length)return{snips:o}}catch(e){}}return null}
 async function research(q,o={}){
  if(!q)return speak('No logré entender su consulta, '+addr()+'. ¿Puede repetirla?');
+ if(!o.imgs){const mr=recall(q);if(mr){lastQ=q;return speak(mr)}}
  lastQ=q;rest=[];const K=keys(q),Q=enc(q);
  card(`<h3>${esc(q)}</h3><p class="sm">Buscando información e imágenes…</p>`);
- const[a,b,c]=await Promise.allSettled([wp('es',q),dd(q),cm(q,o.imgs?16:8)]);
+ const[a,b,c,w]=await Promise.allSettled([wp('es',q),dd(q),cm(q,o.imgs?16:8),webInfo(q)]);const W=w.status=='fulfilled'&&w.value?w.value.snips:[];
  const rel=p=>{const h=norm(p.title+' '+p.extract.slice(0,300));return K.length?K.filter(k=>h.includes(k)).length/K.length:1};
  let pages=a.status=='fulfilled'?a.value:[],lang='es-MX',src='Wikipedia',best=pages.map(p=>[rel(p),p]).filter(x=>x[0]>=.5).sort((x,y)=>y[0]-x[0]||x[1].index-y[1].index)[0];best=best&&best[1];
  const d=b.status=='fulfilled'?b.value:{},dt=d.AbstractText||d.Answer||d.Definition||'';
@@ -192,11 +228,62 @@ async function research(q,o={}){
  for(const x of[...own,...cq])if(!im.some(y=>y.u===x.u))im.push(x);imgs=im.slice(0,o.imgs?16:10);
  const others=pages.filter(p=>p!==best).slice(0,4).map(p=>`<div class="or"><b><a target="_blank" href="${p.fullurl}">${esc(p.title)}</a></b><br><span class="sm">${esc(sents(p.extract)[0]||'').slice(0,150)}</span></div>`).join('')+(d.RelatedTopics||[]).filter(x=>x.Text&&x.FirstURL).slice(0,3).map(x=>`<div class="or"><a target="_blank" href="${x.FirstURL}">${esc(x.Text.slice(0,120))}</a></div>`).join('');
  const L=`<p><a class="btn" target="_blank" href="https://www.google.com/search?q=${Q}">Google</a><a class="btn" target="_blank" href="https://www.google.com/search?tbm=isch&q=${Q}">Imágenes</a><a class="btn" target="_blank" href="https://news.google.com/search?q=${Q}">Noticias</a><a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=${Q}">YouTube</a></p>`;
- if(!ext&&!imgs.length){card(`<h3>${esc(q)}</h3><p>Dejé la búsqueda lista en Google.</p>${L}`);window.open('https://www.google.com/search?q='+Q,'_blank');return speak('Abrí los resultados de Google sobre '+q+', '+addr()+'.')}
- const ss=sents(ext||'');rest=ss.slice(3);
+ if(!ext&&!imgs.length&&!W.length){card(`<h3>${esc(q)}</h3><p>Dejé la búsqueda lista en Google.</p>${L}`);window.open('https://www.google.com/search?q='+Q,'_blank');return speak('Abrí los resultados de Google sobre '+q+', '+addr()+'.')}
+ const ss=sents(ext||''),spoken=W.length?[...W.slice(0,2),...ss.slice(0,2)]:[title+'.',...ss.slice(0,3)];rest=W.length?ss.slice(2):ss.slice(3);
  const link=best&&best.fullurl?` · <a target="_blank" href="${best.fullurl}">${src}</a>`:d.AbstractURL?` · <a target="_blank" href="${d.AbstractURL}">${src}</a>`:'';
- card(`<h3>${esc(title)}</h3>${ext?`<p>${esc(ext.length>900?ext.slice(0,900)+'…':ext)}</p>`:''}${imgs.length?`<div class="gal">${imgs.map((x,k)=>`<img class="gi" data-k="${k}" src="${x.u}" alt="${esc(x.c)}" title="${esc(x.c)}">`).join('')}</div>`:''}<p class="sm">Fuente${link}${rest.length?' · Diga "continúa" para seguir leyendo':''}${imgs.length?' · Toque o diga "amplía la imagen 2"':''}</p>${others?`<p class="sm"><b>Otros resultados</b></p>${others}`:''}${L}`);
- return ss.length?readLong([title+'.',...ss.slice(0,3)],lang):speak('Estas son las imágenes que encontré sobre '+q+'.')}
+ card(`<h3>${esc(title)}</h3>${W.length?'<p class="sm"><b>Web</b></p>'+W.map(x=>`<div class="or">${esc(x)}</div>`).join(''):''}${ext?`<p>${esc(ext.length>900?ext.slice(0,900)+'…':ext)}</p>`:''}${imgs.length?`<div class="gal">${imgs.map((x,k)=>`<img class="gi" data-k="${k}" src="${x.u}" alt="${esc(x.c)}" title="${esc(x.c)}">`).join('')}</div>`:''}<p class="sm">Fuente${link}${rest.length?' · Diga "continúa" para seguir leyendo':''}${imgs.length?' · Toque o diga "amplía la imagen 2"':''}</p>${others?`<p class="sm"><b>Otros resultados</b></p>${others}`:''}${L}`);
+ return spoken.length>1?readLong(spoken,W.length?'es-MX':lang):speak('Estas son las imágenes que encontré sobre '+q+'.')}
+
+/* ===== IA · GEMINI ===== */
+const GK='AQ.Ab8RN6Jf73Ot6cWlmF1xCj7sIvMF_5ImA9yNES73pCGAXDPlDw';
+const MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash'];
+const gkey=()=>(cfg.gkey||GK).trim(),AIon=()=>!!gkey();
+let hist=[],gm=0,tutor=false;
+const spk=t=>t.replace(/```[\s\S]*?```/g,' ').split('\n').map(l=>l.replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/^\s*(#{1,6}|[-*•]|\d+\.)\s+/,'').replace(/[*_`]/g,'').trim()).filter(Boolean).flatMap(sents);
+function md(t){const inl=s=>s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*(?!\s)([^*]+?)\*/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');let h='',ul=false;
+ for(const l of esc(t).split('\n')){const m=l.match(/^\s*([-*•]|\d+\.)\s+(.*)/);if(m){if(!ul){h+='<ul>';ul=true}h+='<li>'+inl(m[2])+'</li>';continue}
+  if(ul){h+='</ul>';ul=false}const hd=l.match(/^#{1,6}\s+(.*)/);if(hd)h+='<h3>'+inl(hd[1])+'</h3>';else if(l.trim())h+='<p>'+inl(l)+'</p>'}
+ return h+(ul?'</ul>':'')}
+const aiErr=e=>e.name==='AbortError'?'La IA tardó demasiado en responder.':e.status===429?'Se alcanzó el límite de uso de la IA. Intente de nuevo en un minuto.':([400,401,403].includes(e.status)&&/key|permission|api/i.test(e.message||''))?'La llave de Gemini no fue aceptada. Revísela en Configuración.':e.empty?'La IA no devolvió respuesta'+(e.block?' (bloqueada por seguridad)':'')+'.':'No pude conectar con la IA.';
+async function ai(q,mode){
+ const know=mem.filter(m=>!isQ(m.x)).slice(-25).map(m=>m.x).join('; ');
+ let sys=`Eres ROCA, el asistente personal por voz de ${addr()}. Hoy es ${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}. Responde siempre en español de México, salvo que te pidan otro idioma. Tus respuestas se leen en voz alta: sin emojis ni tablas, tono natural y directo.`;
+ if(mode==='deep')sys+=' MODO INVESTIGACIÓN: usa la búsqueda web y entrega un informe estructurado con secciones cortas (encabezados con ## y viñetas con -), datos concretos, cifras y fechas. La primera línea debe ser un resumen de una o dos oraciones. Al final indica en una línea qué es incierto o conviene verificar.';
+ else if(mode==='tutor')sys+=' MODO MAESTRO: eres un tutor paciente. Explica paso a paso con ejemplos sencillos y analogías, en bloques cortos (máximo 6 oraciones). Termina SIEMPRE con una pregunta breve para comprobar que entendió o para continuar el diálogo. Si el usuario se equivoca, corrígelo con amabilidad.';
+ else sys+=' Responde breve (3 a 6 oraciones) salvo que pidan detalle. Si es una conversación, dialoga de forma natural y haz preguntas de seguimiento cuando ayude. Usa la búsqueda web para datos actuales.';
+ if(know)sys+=` Datos que el usuario te ha dicho (úsalos solo si ayudan): ${know}.`;
+ const body={systemInstruction:{parts:[{text:sys}]},contents:[...hist,{role:'user',parts:[{text:q}]}],generationConfig:{temperature:mode==='tutor'?.8:.6,maxOutputTokens:mode==='deep'?8192:2048}};
+ if(mode!=='tutor')body.tools=[{google_search:{}}];
+ let err;
+ for(let i=gm;i<MODELS.length;i++){
+  const c=new AbortController(),x=setTimeout(()=>c.abort(),mode==='deep'?70000:35000);
+  try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[i]}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gkey()},body:JSON.stringify(body),signal:c.signal});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok){const e=new Error((d.error&&d.error.message)||String(r.status));e.status=r.status;if(r.status===404||(r.status===400&&/model/i.test(e.message)&&!/key/i.test(e.message))){err=e;continue}throw e}
+   const cd=d.candidates&&d.candidates[0],text=((cd&&cd.content&&cd.content.parts)||[]).map(p=>p.text||'').join('').trim();
+   if(!text)throw Object.assign(new Error('respuesta vacía'),{status:0,empty:true,block:d.promptFeedback&&d.promptFeedback.blockReason});
+   gm=i;hist.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text}]});if(hist.length>20)hist=hist.slice(-20);
+   const seen=new Set(),src=((cd.groundingMetadata&&cd.groundingMetadata.groundingChunks)||[]).map(g=>g.web).filter(w=>w&&w.uri&&!seen.has(w.uri)&&seen.add(w.uri)).slice(0,6);
+   return{text,src,model:MODELS[i]}}
+  finally{clearTimeout(x)}}
+ throw err||new Error('modelo no disponible')}
+async function smart(raw,mode='chat'){
+ const q=raw.replace(/\s+/g,' ').trim();if(!q)return;
+ if(!AIon())return research(cleanQ(q));
+ if(mode==='chat'&&tutor)mode='tutor';
+ if(mode==='chat'&&/\b(mi|mis|me|conmigo|yo)\b/.test(norm(q))){const mr=recall(q);if(mr){lastQ=q;return speak(mr)}}
+ lastQ=q;rest=[];const k=++tok,Q=enc(q),lab={deep:'Investigando a fondo…',tutor:'Preparando la explicación…',chat:'Pensando…'}[mode];
+ card(`<h3>${esc(q)}</h3><p class="sm">${lab}</p>`);$('heard').textContent=lab;
+ let r;try{r=await ai(q,mode)}catch(e){console.error(e);if(k!==tok)return;
+  card(`<h3>IA no disponible</h3><p>${esc(aiErr(e))}</p><p class="sm">${esc(e.message||'')}</p>`);
+  await speak(aiErr(e)+(mode==='tutor'?'':' Uso la búsqueda básica.'));return mode==='tutor'?0:research(cleanQ(q))}
+ if(k!==tok)return;
+ const S=spk(r.text);rest=S.slice(mode==='deep'?3:5);
+ const L=`<p><a class="btn" target="_blank" href="https://www.google.com/search?q=${Q}">Google</a><a class="btn" target="_blank" href="https://www.google.com/search?tbm=isch&q=${Q}">Imágenes</a><a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=${Q}">YouTube</a></p>`;
+ card(`<h3>${esc(q.length>90?q.slice(0,90)+'…':q)}</h3><p class="sm"><b>${mode==='deep'?'Investigación (IA + web)':mode==='tutor'?'Modo maestro':'IA'}</b></p>${md(r.text)}${r.src.length?'<p class="sm"><b>Fuentes</b></p>'+r.src.map(w=>`<div class="or"><a target="_blank" href="${esc(w.uri)}">${esc(w.title||w.uri)}</a></div>`).join(''):''}<p class="sm">${rest.length?'Diga "continúa" para seguir leyendo · ':''}Diga "nueva conversación" para reiniciar el diálogo</p>${L}`);
+ return readLong(S.slice(0,mode==='deep'?3:5),'es-MX')}
+$('iA').classList.toggle('on',AIon());
+
 let files=[],dirName='';
 const ic=n=>`<span class="ext">${(n.split(".").pop()||"").slice(0,4).toUpperCase()}</span>`;
 const fl=q=>{const n=norm(q);return files.map((f,i)=>[f,i]).filter(([f])=>norm(f.name).includes(n)).slice(0,150).map(([f,i])=>`<div class="fi" data-i="${i}">${ic(f.name)} ${esc(f.name)}</div>`).join('')};
@@ -213,7 +300,19 @@ async function openFile(i){const f=await files[i].get(),u=URL.createObjectURL(f)
  if(/\.(pdf|png|jpe?g|gif|webp|svg|txt|mp3|mp4|webm|html?|csv|json)$/i.test(nm))return go(u,nm);
  const a=document.createElement('a');a.href=u;a.download=nm;a.click();return speak('Ese tipo de archivo no se abre dentro del navegador. Lo descargué para que lo abra con su aplicación.')}
 const R=[],on=(re,fn)=>R.push([re,fn]);
-on(/^((rocafi|oye) )*(detente|deten|detener|alto|basta|silencio|callate|cancela|stop|espera)\b/,()=>interrupt());
+on(/^(nueva conversacion|reinicia la conversacion|olvida la conversacion|reinicia el dialogo)$/,()=>{hist=[];return speak('Conversación reiniciada, '+addr()+'.')});
+on(/^(modo normal|salir del modo maestro|termina la clase|fin de la clase|desactiva el modo maestro)$/,()=>{tutor=false;return speak('Modo maestro desactivado.')});
+on(/^(modo maestro|modo aprendizaje|ensename|quiero aprender|aprendamos|vamos a aprender|dame una clase)\b(.*)/,(m,t,raw)=>{if(!AIon())return speak('Necesito la llave de Gemini para el modo maestro. Configúrela en Configuración.');tutor=true;return m[2].trim()?smart(raw,'tutor'):speak('Modo maestro activado, '+addr()+'. ¿Qué quiere aprender hoy?')});
+on(/^(investiga a fondo|investigacion profunda|investiga profundamente|investigacion completa|haz una investigacion|haz un informe|reporte de|informe de)\b/,(m,t,raw)=>{if(!AIon())return research(cleanQ(raw));return smart(raw,'deep')});
+on(/^(olvida|borra|elimina) (todo|toda la memoria|todo lo que (te )?(he )?(dicho|dije))$/,()=>{mem=[];persist();return speak('Listo, ya lo olvidé todo.')});
+on(/^(olvida|borra|elimina|quita)( eso| lo ultimo| lo que dije| lo que acabo de decir| lo anterior| lo que te dije)?$/,()=>{mem.pop();persist();return speak('Listo, ya lo olvidé.')});
+on(/^(olvida|borra|elimina) (que |lo de |lo que (te )?dije (de|sobre) |sobre )?(.+)/,(m,t,raw)=>{const K=keys(m[5]);const n=mem.length;mem=mem.filter(x=>!K.length||K.filter(k=>norm(x.x).includes(k)).length/K.length<.5);persist();return speak(n!==mem.length?'Listo, ya lo olvidé.':'Listo.')});
+on(/(que sabes de mi|que recuerdas de mi|muestra(me)? (mi |tu )?memoria|mi memoria)/,()=>{memCard();const s=mem.filter(x=>!isQ(x.x)).slice(-4).map(x=>tf(x.x));return s.length?readLong(s):speak('Aún no tengo datos suyos, '+addr()+'.')});
+on(/^(pausa|pausar)( el)?( video)?$|^(detener|para) el video$/,()=>ytSend('pauseVideo'));
+on(/^(reanuda|reanudar|play|dale play)( el video)?$/,()=>ytSend('playVideo'));
+on(/^(cierra|quita|apaga)( el)?( video| youtube| reproductor)$/,()=>{ytSend('pauseVideo');card('<h3>Listo</h3>')});
+on(/\byoutube\b/,(m,t)=>{const q=t.replace(/\b(en|con|desde) youtube\b/,' ').replace(/^(abre|abrir|abreme|entra a|ve a|ir a)?\s*youtube\s*(y\s+)?/,'').replace(/^(busca|buscame|buscar|pon|ponme|reproduce|reproduceme|reproducir|toca|muestrame|ensename|quiero ver|quiero escuchar)\s+/,'').replace(/^(el video de |la cancion |musica de |videos? de )/,'').trim();return q?ytPlay(q):go('https://www.youtube.com','YouTube')});
+on(/^((roca|oye) )*(detente|deten|detener|alto|basta|silencio|callate|cancela|stop|espera)\b/,()=>interrupt());
 on(/^(clic|click|haz clic|hazle clic|presiona|toca|selecciona|abrelo|abre eso|esto|eso|este|ese)$/,()=>clickCur());
 on(/^(baja|abajo|mas abajo|desplaza(te)?( hacia)? abajo)$/,()=>scrollP(1));
 on(/^(sube|arriba|mas arriba|desplaza(te)?( hacia)? arriba)$/,()=>scrollP(-1));
@@ -243,7 +342,7 @@ on(/^(activa|enciende|prende|inicia|abre|muestra)\s+(la\s+)?(camara|gestos|senso
 on(/^(apaga|desactiva|deten|cierra|oculta)\s+(la\s+)?(camara|gestos|sensores)/,async()=>{camOff();return speak('Sensores de gestos desactivados.')});
 on(/^(llevame|como llego|como llegar|ruta|navega|direcciones)\b\s*(?:a la|al|a|hacia|para)?\s*(.+)/,m=>go('https://www.google.com/maps/dir/?api=1&destination='+enc(m[2]),'la ruta a '+m[2]));
 on(/^(mapa de|donde queda|donde esta|muestrame en el mapa)\s+(.+)/,m=>go('https://www.google.com/maps/search/?api=1&query='+enc(m[2]),'el mapa de '+m[2]));
-on(/^(pon|ponme|reproduce|toca)\s+(musica de |la cancion |el video de |el video |musica |)(.+)/,m=>go('https://www.youtube.com/results?search_query='+enc(m[3]),'YouTube: '+m[3]));
+on(/^(pon|ponme|reproduce|toca)\s+(musica de |la cancion |el video de |el video |musica |)(.+)/,m=>ytPlay(m[3]));
 on(/^(abre|abrir|abreme|ejecuta|inicia|lanza|arranca|vete a|ve a|ir a|entra a)\s+(.+)/,async m=>{
  const x=m[2].replace(/^(el|la|los|las|mi|mis|un|una|pagina de|aplicacion de|app de)\s+/,'');
  if(/^(descargas|archivos|carpeta|documentos)/.test(x))return showFiles();
@@ -256,17 +355,16 @@ on(/^(abre|abrir|abreme|ejecuta|inicia|lanza|arranca|vete a|ve a|ir a|entra a)\s
 on(/^(continua|sigue|sigue leyendo|lee mas|mas informacion)$/,()=>cont());
 on(/^(busca|buscar|investiga|googlea|averigua|define|que es|que son|que significa|quien es|quien fue|quienes|hablame|cuentame|explicame|como funciona|como funcionan|para que sirve|cual es|cuales son|dime que|dime quien|informacion)\b/,async(m,t,raw)=>{
  const g=/\ben google\b/.test(t),y=/\ben youtube\b/.test(t),q=cleanQ(raw.replace(/\b(en|con) (google|youtube)\b/i,''));
- if(y)return go('https://www.youtube.com/results?search_query='+enc(q),'YouTube');
- if(g)go('https://www.google.com/search?q='+enc(q),'Google');return research(q)});
+ if(y)return ytPlay(q);return smart(raw.replace(/\b(en|con) (google|youtube)\b/i,''))});
 on(/chiste/,()=>speak(['¿Por qué los programadores confunden Halloween con Navidad? Porque 31 de octubre es igual a 25 de diciembre.','Mi código funciona, y no sé por qué. Mi código no funciona, y tampoco sé por qué.','Un SQL entra a un bar, se acerca a dos mesas y pregunta: ¿puedo unirme?'][Math.random()*3|0]));
 on(/estado del sistema|bateria|como estas|diagnostico/,async()=>{let b='';try{const x=await navigator.getBattery();b=` Batería al ${Math.round(x.level*100)} por ciento${x.charging?', cargando':''}.`}catch(e){}return speak(`Todos los sistemas operan correctamente, ${addr()}.${navigator.onLine?' Conexión a internet activa.':' Sin conexión a internet.'}${b}`)});
 on(/pantalla completa/,()=>{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();return speak('Pantalla completa.')});
 on(/(modo|color|tema)\s+(rojo|azul|verde|naranja|morado|dorado)/,m=>{cc={rojo:'#ff3b3b',azul:'#5cc8ff',verde:'#39ff88',naranja:'#ff9c1a',morado:'#b266ff',dorado:'#ffd24a'}[m[2]];document.documentElement.style.setProperty('--c',cc);return speak('Interfaz en '+m[2]+'.')});
 on(/ayuda|comandos|que puedes hacer/,()=>{help();return speak('Estos son mis comandos, '+addr()+'.')});
 on(/^(gracias|muchas gracias)/,()=>speak('Para eso estoy, '+addr()+'.'));
-on(/quien eres|como te llamas/,()=>speak('Soy Rocafi, su asistente personal. Escucho su voz, veo sus gestos, consulto internet y abro sus aplicaciones, '+addr()+'.'));
+on(/quien eres|como te llamas/,()=>speak('Soy Roca, su asistente personal. Escucho su voz, veo sus gestos, consulto internet y abro sus aplicaciones, '+addr()+'.'));
 on(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey)\b/,()=>speak(greet()+', '+addr()+'. ¿En qué puedo ayudarle?'));
-function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Voz y manos a la vez</b><br>Señale con el índice y diga "clic", "esto" o "amplía la imagen"; deslice la mano o diga "baja", "sube", "siguiente", "anterior".</p><p class="sm"><b>Detener</b><br>Diga "detente" (también mientras habla) o cierre el puño 1 s: me callo y lo escucho.</p><p class="sm"><b>Consultas</b><br>Pregunte lo que quiera ("cuántos habitantes tiene Guadalajara"): busco, muestro imágenes y leo. "Imágenes de ...", "continúa", "repite", "clima", "dólar", "traduce hola al inglés"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / WhatsApp / Spotify / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Pinza y arrastrar: desplazar · Palma deslizando: imagen anterior/siguiente o subir/bajar · Palma 1 s: ayuda · Puño 1 s: detente · Paz 1 s: Google · Tres dedos 1 s: continuar · Rock (índice y meñique) 1 s: repetir · Pulgar arriba: confirmar · Pulgar abajo: cerrar imagen</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
+function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Voz y manos a la vez</b><br>Señale con el índice y diga "clic", "esto" o "amplía la imagen"; deslice la mano o diga "baja", "sube", "siguiente", "anterior".</p><p class="sm"><b>Detener</b><br>Diga "detente" (también mientras habla) o cierre el puño 1 s: me callo y lo escucho.</p><p class="sm"><b>Consultas</b><br>Pregunte lo que quiera ("cuántos habitantes tiene Guadalajara"): busco, muestro imágenes y leo. "Imágenes de ...", "continúa", "repite", "clima", "dólar", "traduce hola al inglés"</p><p class="sm"><b>IA (Gemini)</b><br>Hable o escriba con naturalidad y dialogamos (recuerdo la conversación). \"Investiga a fondo ...\" genera un informe con fuentes. \"Modo maestro\" / \"enséñame ...\" para aprender con preguntas de seguimiento; \"modo normal\" para salir. \"Nueva conversación\" reinicia el diálogo.</p><p class="sm"><b>YouTube</b><br>"Busca en YouTube ...", "pon ... en YouTube", "pausa", "reanuda", "cierra el video"</p><p class="sm"><b>Memoria</b><br>Todo lo que me diga queda en mi memoria: "mi nombre es ...", "recuerda que ...". Pregunte después ("¿cómo me llamo?"). "Olvida eso", "olvida lo de ...", "qué sabes de mí"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / WhatsApp / Spotify / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Pinza y arrastrar: desplazar · Palma deslizando: imagen anterior/siguiente o subir/bajar · Palma 1 s: ayuda · Puño 1 s: detente · Paz 1 s: Google · Tres dedos 1 s: continuar · Rock (índice y meñique) 1 s: repetir · Pulgar arriba: confirmar · Pulgar abajo: cerrar imagen</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
 $('panel').onclick=e=>{const f=e.target.closest('.fi');if(f)openFile(+f.dataset.i);const gi=e.target.closest('.gi');if(gi)openLb(+gi.dataset.k);
  if(e.target.id==='addApp'){const n=norm($('an').value),u=$('au').value.trim();if(n&&u){cfg.apps[n]=u;save();speak(`Acceso "${n}" guardado. Diga: abre ${n}.`)}}};
 let mediaStream=null,analyser=null;
@@ -280,12 +378,15 @@ async function perms(){const dg=[];
  catch(e){dg.push('Cámara no disponible o denegada ('+e.name+').');try{mediaStream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e2){dg.push('Micrófono denegado o no encontrado ('+e2.name+'). Pulse el candado junto a la dirección y permita micrófono y cámara.')}}
  if(mediaStream&&mediaStream.getAudioTracks().length)meter(mediaStream);
  return dg}
-const WK='(roca ?(?:f|ph)(?:í|i|y|e|il|in)?)';
+const WK='(roca|rocka|roka)';
 async function handle(raw,voice){raw=raw.trim();if(!raw)return;
- if(voice&&cfg.wake&&!new RegExp('\\b'+WK,'i').test(norm(raw)))return;
+ if(voice&&(cfg.wake||$('ytf'))&&!new RegExp('\\b'+WK,'i').test(norm(raw)))return;
  raw=raw.replace(new RegExp('^(oye |hey )?'+WK+'[,.\\s]*','i'),'');if(!raw)return speak('A sus órdenes, '+addr()+'.');
  $('heard').textContent=raw;log('U',raw);const t=norm(raw);
+ if(!/^(olvida|borra|elimina|quita)\b/.test(t)){const ex=raw.replace(/^(recuerda|recuérdame|acuérdate|anota|apunta|guarda)( que)?[,:\s]+/i,'');if(ex!==raw)remember(ex);else if(t.split(/\s+/).length>=3)remember(raw)}
  try{for(const[re,fn]of R){const m=t.match(re);if(m){await fn(m,t,raw);return}}
+  if(!isQ(raw)&&STM.test(t)&&!(AIon()&&t.split(/\s+/).length>=4)){const A=['Entendido.','De acuerdo.','Lo tendré presente.'];return speak(A[Math.random()*3|0])}
+  if(AIon()){if(voice&&t.split(/\s+/).length<2)return;await smart(raw);return}
   if(!keys(t).length||(voice&&t.split(/\s+/).length<2))return;await research(cleanQ(raw))}
  catch(e){console.error(e);speak('Tuve un problema con esa solicitud, '+addr()+'. Verifique su conexión e intente de nuevo.')}}
 let hands,cam=false,stream,cc='#5cc8ff',hv=null,hold={g:'',n:0},cool=0,gcool=0,pinched=false,cx=innerWidth/2,cy=innerHeight/2,lastG='';
@@ -340,8 +441,8 @@ const oc=$('orb'),o=oc.getContext('2d');let ph=0;
  o.fillStyle=g;o.beginPath();o.arc(300,300,60+a,0,7);o.fill();requestAnimationFrame(draw)})();
 setInterval(()=>$('clk').textContent=new Date().toLocaleTimeString('es-MX'),1000);
 navigator.getBattery&&navigator.getBattery().then(b=>{const u=()=>$('bat').textContent='Batería '+Math.round(b.level*100)+'%'+(b.charging?' · carga':'');u();b.onlevelchange=b.onchargingchange=u});
-$('cName').value=cfg.name;$('cTitle').value=cfg.title;$('cCity').value=cfg.city;$('cWake').checked=cfg.wake;
-$('go').onclick=async()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;save();$('diag').textContent='Solicitando acceso al micrófono y la cámara. Acepte el aviso del navegador...';const dg=mediaStream?[]:await perms();$('diag').textContent='';$('boot').style.display='none';
+$('cName').value=cfg.name;$('cTitle').value=cfg.title;$('cCity').value=cfg.city;$('cWake').checked=cfg.wake;$('cKey').value=cfg.gkey||'';
+$('go').onclick=async()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;cfg.gkey=$('cKey').value.trim();save();$('iA').classList.toggle('on',AIon());$('diag').textContent='Solicitando acceso al micrófono y la cámara. Acepte el aviso del navegador...';const dg=mediaStream?[]:await perms();$('diag').textContent='';$('boot').style.display='none';
  if(window.speechSynthesis)speechSynthesis.getVoices();startRec();camOn(true);
  speak(first?`${greet()}, ${addr()}. Sistemas en línea. Diga "ayuda" para ver mis comandos. ¿En qué puedo servirle?`:`Configuración guardada. Lo llamaré ${addr()}.`);first=false;help();if(dg.length)card('<h3>Diagnóstico</h3>'+dg.map(x=>'<p>'+esc(x)+'</p>').join(''))};
 const net=()=>$('iN').classList.toggle('on',navigator.onLine);net();addEventListener('online',net);addEventListener('offline',net);setInterval(()=>{if(speaking&&!speechSynthesis.speaking){speaking=false;setState(listening?'listen':'idle')}if(listening&&!rec)startRec()},3000);
