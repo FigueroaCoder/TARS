@@ -78,6 +78,8 @@ try{Object.assign(cfg,JSON.parse(localStorage.getItem('jv')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('jv',JSON.stringify(cfg))}catch(e){}};
 const addr=()=>[cfg.title,cfg.name].filter(Boolean).join(' ')||'jefe';
 const greet=()=>{const h=new Date().getHours();return h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'};
+const pick=a=>a[Math.random()*a.length|0];
+const nick=()=>Math.random()<.5?', '+addr():'';
 const card=h=>$('panel').innerHTML=h;
 let curU=null,state='idle',speaking=false,listening=false,lastEnd=0,voices=[],rec=null,first=true;
 const ST={idle:'EN ESPERA',listen:'ESCUCHANDO',speak:'HABLANDO'};
@@ -110,7 +112,7 @@ function beep(){try{const a=new AudioContext(),o=a.createOscillator();o.connect(
 function go(u,l){const web=/^(https?|blob):/.test(u);let ok=true;
  if(web)ok=!!window.open(u,'_blank');else{const a=document.createElement('a');a.href=u;a.click()}
  if(!ok||!web)card(`<h3> ${esc(l)}</h3><p>${web?'El navegador bloqueó la ventana emergente. Permítala para este archivo o pulse:':'Si no se abrió solo, pulse (el navegador puede pedir permiso):'}</p><a class="btn" target="_blank" href="${esc(u)}">Abrir ${esc(l)}</a>`);
- return speak('Abriendo '+l+'.')}
+ return speak(pick(['Abriendo ','Enseguida abro ','Claro, abriendo '])+l+'.')}
 const APPS=`excel|ms-excel:|Excel
 word|ms-word:|Word
 power ?point|ms-powerpoint:|PowerPoint
@@ -158,15 +160,15 @@ async function weather(city){let lat,lon,name=city;
  return speak(`En ${name} hay ${R(c.temperature_2m)} grados, ${ds}. Máxima de ${R(d.temperature_2m_max[0])} y mínima de ${R(d.temperature_2m_min[0])}, con ${d.precipitation_probability_max[0]} por ciento de probabilidad de lluvia.`)}
 const STOP=new Set('el la los las un una de del al y o en que es son fue sobre acerca para por con me te se lo le mas muy como cual cuales quien quienes donde cuando puedes puede podrias decir dime explica explicame cuentame hablame informacion investiga busca buscar averigua favor roca roca'.split(' '));
 const keys=q=>norm(q).split(/[^a-z0-9ñ]+/).filter(w=>w.length>2&&!STOP.has(w));
-function cleanQ(raw){return raw.replace(/^(por favor[,\s]*)?(oye |hey )?(roca[,\s]*)?/i,'').replace(/^(me\s+)?(puedes|podrias|puede)\s+(decir|explicar|buscar|investigar)(me)?\s*/i,'').replace(/^(dime|d[ií]game|expl[ií]came|cu[eé]ntame|h[aá]blame|busca|buscar|investiga|googlea|averigua|define)\s*/i,'').replace(/^(qu[eé]|qui[eé]n(es)?|cu[aá]l(es)?|d[oó]nde|cu[aá]ndo|c[oó]mo|para qu[eé])\s+(es|son|fue|fueron|est[aá]n?|queda|funciona|funcionan|sirve|sirven|significa)?\s*/i,'').replace(/^(informaci[oó]n |datos |todo )?(de |del |sobre |acerca de |en internet |en google )+/i,'').replace(/^(el|la|los|las|un|una)\s+/i,'').replace(/[?¿!¡.,]+/g,'').trim()}
+function cleanQ(raw){const nm=raw.match(/(?:que\s+se\s+llama|llamad[oa]|de\s+nombre)\s+(.+?)[?¿!¡.,\s]*$/i);if(nm)return nm[1].trim();return raw.replace(/^(por favor[,\s]*)?(oye |hey )?(roca[,\s]*)?/i,'').replace(/^(me\s+)?(puedes|podrias|puede)\s+(decir|explicar|buscar|investigar)(me)?\s*/i,'').replace(/^(dime|d[ií]game|expl[ií]came|cu[eé]ntame|h[aá]blame|busca|buscar|investiga|googlea|averigua|define)\s*/i,'').replace(/^(qu[eé]|qui[eé]n(es)?|cu[aá]l(es)?|d[oó]nde|cu[aá]ndo|c[oó]mo|para qu[eé])\s+(es|son|fue|fueron|est[aá]n?|queda|funciona|funcionan|sirve|sirven|significa)?\s*/i,'').replace(/^(informaci[oó]n |datos |todo )?(de |del |sobre |acerca de |en internet |en google )+/i,'').replace(/^(el|la|los|las|un|una)\s+/i,'').replace(/[?¿!¡.,]+/g,'').trim()}
 let rest=[];
 const jt=async(u,ms=7000)=>{const c=new AbortController(),x=setTimeout(()=>c.abort(),ms);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw 0;return await r.json()}finally{clearTimeout(x)}};
 const wp=async(l,q)=>{const d=await jt(`https://${l}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${enc(q)}&gsrlimit=6&prop=extracts|pageimages|info&exintro=1&explaintext=1&exlimit=max&piprop=thumbnail&pithumbsize=520&inprop=url&format=json&origin=*`);return Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>a.index-b.index).filter(p=>p.extract)};
 const cm=async(q,n)=>{const d=await jt(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(q)}&gsrlimit=${n}&prop=imageinfo&iiprop=url|mime&iiurlwidth=480&format=json&origin=*`);return Object.values((d.query&&d.query.pages)||{}).sort((a,b)=>a.index-b.index).map(p=>{const i=p.imageinfo&&p.imageinfo[0];return i&&/image\/(jpeg|png|webp)/.test(i.mime)&&i.thumburl?{u:i.thumburl,c:p.title.replace(/^File:/,'').replace(/\.\w+$/,'').replace(/_/g,' ')}:null}).filter(Boolean)};
 const dd=q=>jt('https://api.duckduckgo.com/?format=json&no_html=1&skip_disambig=1&t=roca&q='+enc(q));
 const sents=s=>s.replace(/\s+/g,' ').split(/(?<=[.!?])\s+/).filter(Boolean);
-async function readLong(a,l='es-MX'){const k=++tok;lastAns={a,l};lastLang=l;log('J',a.join(' ').slice(0,300));for(const s of a){if(k!==tok)break;await speak(s,l,true)}}
-const cont=()=>rest.length?readLong(rest.splice(0,4),lastLang):speak('Eso es todo lo que tengo sobre ese tema, '+addr()+'.');
+async function readLong(a,l='es-MX',tail){const k=++tok;lastAns={a,l};lastLang=l;log('J',a.join(' ').slice(0,300));for(const s of a){if(k!==tok)break;await speak(s,l,true)}if(tail&&k===tok){log('J',tail);await speak(tail,'es-MX',true)}}
+const cont=()=>rest.length?readLong(rest.splice(0,4),lastLang,rest.length?pick(['Si quiere que siga, dígame continúa.','Todavía hay más, ¿sigo?']):pick(['Y eso es todo lo que encontré. ¿Le busco algo más?','Hasta ahí llega lo que tengo. Dígame si quiere otra cosa.'])):speak(pick(['Eso es todo lo que tengo sobre ese tema, '+addr()+'.','Ya no tengo más sobre eso. ¿Buscamos otra cosa?']));
 const repeat=()=>lastAns?readLong(lastAns.a,lastAns.l):speak('Aún no tengo nada que repetir.');
 function chime(){try{const a=new AudioContext(),o=a.createOscillator(),g=a.createGain();g.gain.value=.05;o.connect(g);g.connect(a.destination);o.frequency.value=660;o.start();setTimeout(()=>{o.stop();a.close()},130)}catch(e){}}
 function interrupt(){ytSend('pauseVideo');tok++;try{speechSynthesis.cancel()}catch(e){}speaking=false;lastEnd=Date.now()-300;setState(listening?'listen':'idle');$('heard').textContent='Detenido. Lo escucho…';chime();if(rec&&listening){try{rec.abort()}catch(e){}}else if(!listening&&SR)startRec()}
@@ -206,7 +208,7 @@ async function ytPlay(q){q=q.replace(/\s+(en|con|desde)\s+youtube\s*$/i,'').trim
  let id=null;try{id=await Promise.any(ytSrc(q))}catch(x){}clearInterval(iv);
  if(!id){card(`<h3>YouTube</h3><div class="ytb">${esc(q)}</div><p><a class="btn" target="_blank" href="${R}">Abrir resultados</a></p>`);window.open(R,'_blank');return speak('Abrí la búsqueda de '+q+' en YouTube.')}
  card(`<h3>YouTube</h3><div class="ytb">${esc(q)}</div><iframe id="ytf" style="width:100%;aspect-ratio:16/9;border:0" src="https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&playsinline=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><p><a class="btn" target="_blank" href="https://www.youtube.com/watch?v=${id}">Abrir en YouTube</a><a class="btn" target="_blank" href="${R}">Más resultados</a></p><p class="sm">Si el video no inicia, abra este archivo desde http://localhost o use "Abrir en YouTube".</p>`)}
-const snips=s=>{const seen=new Set(),o=[];for(let l of s.split('\n')){l=l.replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/https?:\/\/\S+/g,'').replace(/[*#>_`|]/g,' ').replace(/\s+/g,' ').trim();if(l.length<70||l.length>420||l.split(' ').length<10)continue;if(/cookies|iniciar sesi|accesibilidad|privacidad|condiciones|configuraci|resultados de b|ver más|traducir esta|url source|markdown content|title:/i.test(l))continue;const k=l.slice(0,40);if(seen.has(k))continue;seen.add(k);o.push(l);if(o.length>=5)break}return o};
+const snips=s=>{const seen=new Set(),o=[];for(let l of s.split('\n')){l=l.replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/https?:\/\/\S+/g,'').replace(/[*#>_`|]/g,' ').replace(/\s+/g,' ').trim();if(l.length<70||l.length>420||l.split(' ').length<10)continue;if(/cookies|iniciar sesi|accesibilidad|privacidad|condiciones|configuraci|resultados de b|ver más|traducir esta|url source|markdown content|title:|visi[oó]n general|creada por ia|modo ia|ia en este momento|vuelve a intentarlo|intentarlo m[aá]s tarde|ai overview|ai mode|no hay una|no se puede generar|respuesta del modo/i.test(l))continue;const k=l.slice(0,40);if(seen.has(k))continue;seen.add(k);o.push(l);if(o.length>=5)break}return o};
 async function webInfo(q){const bad=/enablejs|unusual traffic|captcha|consent\.google|Before you continue|Antes de ir a Google/i;
  for(const u of[`https://r.jina.ai/https://www.google.com/search?q=${enc(q)}&hl=es&gl=mx`,`https://r.jina.ai/https://html.duckduckgo.com/html/?q=${enc(q)}&kl=mx-es`]){try{const c=new AbortController(),x=setTimeout(()=>c.abort(),8000);const r=await fetch(u,{signal:c.signal});clearTimeout(x);const s=await r.text();if(!r.ok||bad.test(s))continue;const o=snips(s);if(o.length)return{snips:o}}catch(e){}}return null}
 async function research(q,o={}){
@@ -229,14 +231,14 @@ async function research(q,o={}){
  const others=pages.filter(p=>p!==best).slice(0,4).map(p=>`<div class="or"><b><a target="_blank" href="${p.fullurl}">${esc(p.title)}</a></b><br><span class="sm">${esc(sents(p.extract)[0]||'').slice(0,150)}</span></div>`).join('')+(d.RelatedTopics||[]).filter(x=>x.Text&&x.FirstURL).slice(0,3).map(x=>`<div class="or"><a target="_blank" href="${x.FirstURL}">${esc(x.Text.slice(0,120))}</a></div>`).join('');
  const L=`<p><a class="btn" target="_blank" href="https://www.google.com/search?q=${Q}">Google</a><a class="btn" target="_blank" href="https://www.google.com/search?tbm=isch&q=${Q}">Imágenes</a><a class="btn" target="_blank" href="https://news.google.com/search?q=${Q}">Noticias</a><a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=${Q}">YouTube</a></p>`;
  if(!ext&&!imgs.length&&!W.length){card(`<h3>${esc(q)}</h3><p>Dejé la búsqueda lista en Google.</p>${L}`);window.open('https://www.google.com/search?q='+Q,'_blank');return speak('Abrí los resultados de Google sobre '+q+', '+addr()+'.')}
- const ss=sents(ext||''),spoken=W.length?[...W.slice(0,2),...ss.slice(0,2)]:[title+'.',...ss.slice(0,3)];rest=W.length?ss.slice(2):ss.slice(3);
+ const cl=x=>x.replace(/\s*\([^)]*\)/g,'').replace(/\s+/g,' ').trim(),ss=sents(ext||'').map(cl).filter(Boolean),useW=!ext&&W.length>0,op=lang==='es-MX'?pick(['Claro.','Con gusto.','Mira.','Por supuesto.','Buena pregunta.'])+' ':'',spoken=useW?[op+W[0],...W.slice(1,2)]:ss.length?[op+ss[0],...ss.slice(1,3)]:[title+'.'];rest=useW?[]:ss.slice(3);const tl=lang==='es-MX'||useW?(rest.length?pick(['Si quiere que siga, dígame continúa.','Hay más información, solo dígame continúa.']):pick(['¿Quiere que le muestre fotos o profundice en algo?','Si quiere más detalles, solo pídamelo.'])):undefined;
  const link=best&&best.fullurl?` · <a target="_blank" href="${best.fullurl}">${src}</a>`:d.AbstractURL?` · <a target="_blank" href="${d.AbstractURL}">${src}</a>`:'';
- card(`<h3>${esc(title)}</h3>${W.length?'<p class="sm"><b>Web</b></p>'+W.map(x=>`<div class="or">${esc(x)}</div>`).join(''):''}${ext?`<p>${esc(ext.length>900?ext.slice(0,900)+'…':ext)}</p>`:''}${imgs.length?`<div class="gal">${imgs.map((x,k)=>`<img class="gi" data-k="${k}" src="${x.u}" alt="${esc(x.c)}" title="${esc(x.c)}">`).join('')}</div>`:''}<p class="sm">Fuente${link}${rest.length?' · Diga "continúa" para seguir leyendo':''}${imgs.length?' · Toque o diga "amplía la imagen 2"':''}</p>${others?`<p class="sm"><b>Otros resultados</b></p>${others}`:''}${L}`);
- return spoken.length>1?readLong(spoken,W.length?'es-MX':lang):speak('Estas son las imágenes que encontré sobre '+q+'.')}
+ card(`<h3>${esc(title)}</h3>${useW?'<p class="sm"><b>Web</b></p>'+W.map(x=>`<div class="or">${esc(x)}</div>`).join(''):''}${ext?`<p>${esc(ext.length>900?ext.slice(0,900)+'…':ext)}</p>`:''}${imgs.length?`<div class="gal">${imgs.map((x,k)=>`<img class="gi" data-k="${k}" src="${x.u}" alt="${esc(x.c)}" title="${esc(x.c)}">`).join('')}</div>`:''}<p class="sm">Fuente${link}${rest.length?' · Diga "continúa" para seguir leyendo':''}${imgs.length?' · Toque o diga "amplía la imagen 2"':''}</p>${others?`<p class="sm"><b>Otros resultados</b></p>${others}`:''}${L}`);
+ return (ext||useW)?readLong(spoken,useW?'es-MX':lang,tl):speak('Estas son las imágenes que encontré sobre '+q+', '+addr()+'.')}
 
 /* ===== IA · GEMINI ===== */
 const GK='AQ.Ab8RN6Jf73Ot6cWlmF1xCj7sIvMF_5ImA9yNES73pCGAXDPlDw';
-const MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash'];
+const MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-flash-lite','gemini-flash-lite-latest'];
 const gkey=()=>(cfg.gkey||GK).trim(),AIon=()=>!!gkey();
 let hist=[],gm=0,tutor=false;
 const spk=t=>t.replace(/```[\s\S]*?```/g,' ').split('\n').map(l=>l.replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/^\s*(#{1,6}|[-*•]|\d+\.)\s+/,'').replace(/[*_`]/g,'').trim()).filter(Boolean).flatMap(sents);
@@ -244,45 +246,63 @@ function md(t){const inl=s=>s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|
  for(const l of esc(t).split('\n')){const m=l.match(/^\s*([-*•]|\d+\.)\s+(.*)/);if(m){if(!ul){h+='<ul>';ul=true}h+='<li>'+inl(m[2])+'</li>';continue}
   if(ul){h+='</ul>';ul=false}const hd=l.match(/^#{1,6}\s+(.*)/);if(hd)h+='<h3>'+inl(hd[1])+'</h3>';else if(l.trim())h+='<p>'+inl(l)+'</p>'}
  return h+(ul?'</ul>':'')}
-const aiErr=e=>e.name==='AbortError'?'La IA tardó demasiado en responder.':e.status===429?'Se alcanzó el límite de uso de la IA. Intente de nuevo en un minuto.':([400,401,403].includes(e.status)&&/key|permission|api/i.test(e.message||''))?'La llave de Gemini no fue aceptada. Revísela en Configuración.':e.empty?'La IA no devolvió respuesta'+(e.block?' (bloqueada por seguridad)':'')+'.':'No pude conectar con la IA.';
+const aiErr=e=>e.name==='AbortError'?'La IA tardó demasiado en responder.':e.status===429?'Se alcanzó el límite de uso de la IA. Intente de nuevo en un minuto.':([400,401,403].includes(e.status)&&/key|permission|api/i.test(e.message||''))?'La llave de Gemini no fue aceptada. Revísela en Configuración.':e.empty?'La IA no devolvió respuesta'+(e.block?' (bloqueada por seguridad)':'')+'.':'Se me complicó la conexión con la IA.';
 async function ai(q,mode){
  const know=mem.filter(m=>!isQ(m.x)).slice(-25).map(m=>m.x).join('; ');
- let sys=`Eres ROCA, el asistente personal por voz de ${addr()}. Hoy es ${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}. Responde siempre en español de México, salvo que te pidan otro idioma. Tus respuestas se leen en voz alta: sin emojis ni tablas, tono natural y directo.`;
+ let sys=`Eres ROCA, el asistente personal por voz de ${addr()}. Hoy es ${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}. Responde siempre en español de México, salvo que te pidan otro idioma. Tus respuestas se leen en voz alta: sin emojis ni tablas. Habla como una persona real, cercana y cálida, no como enciclopedia: empieza con una muletilla natural que varíes (por ejemplo "Claro", "Mira", "A ver", "Buena pregunta", "Por supuesto"), usa frases cortas del habla cotidiana, muestra empatía cuando el usuario cuente algo personal y llámalo por su tratamiento de vez en cuando, no en cada frase.`;
  if(mode==='deep')sys+=' MODO INVESTIGACIÓN: usa la búsqueda web y entrega un informe estructurado con secciones cortas (encabezados con ## y viñetas con -), datos concretos, cifras y fechas. La primera línea debe ser un resumen de una o dos oraciones. Al final indica en una línea qué es incierto o conviene verificar.';
  else if(mode==='tutor')sys+=' MODO MAESTRO: eres un tutor paciente. Explica paso a paso con ejemplos sencillos y analogías, en bloques cortos (máximo 6 oraciones). Termina SIEMPRE con una pregunta breve para comprobar que entendió o para continuar el diálogo. Si el usuario se equivoca, corrígelo con amabilidad.';
- else sys+=' Responde breve (3 a 6 oraciones) salvo que pidan detalle. Si es una conversación, dialoga de forma natural y haz preguntas de seguimiento cuando ayude. Usa la búsqueda web para datos actuales.';
+ else sys+=' Responde breve (3 a 6 oraciones) salvo que pidan detalle. Si preguntan quién o qué es una persona o cosa, responde directo en la primera oración y luego explica lo más relevante (quién es, por qué es conocido, datos clave). Nunca digas que no puedes buscar: usa la búsqueda web y responde. Si es una conversación, dialoga de forma natural y haz una pregunta de seguimiento corta cuando ayude.';
  if(know)sys+=` Datos que el usuario te ha dicho (úsalos solo si ayudan): ${know}.`;
  const body={systemInstruction:{parts:[{text:sys}]},contents:[...hist,{role:'user',parts:[{text:q}]}],generationConfig:{temperature:mode==='tutor'?.8:.6,maxOutputTokens:mode==='deep'?8192:2048}};
  if(mode!=='tutor')body.tools=[{google_search:{}}];
+ const t0=Date.now(),cap=mode==='deep'?90000:38000,per=mode==='deep'?60000:15000,order=[...MODELS.slice(gm),...MODELS.slice(0,gm)];
  let err;
- for(let i=gm;i<MODELS.length;i++){
-  const c=new AbortController(),x=setTimeout(()=>c.abort(),mode==='deep'?70000:35000);
-  try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[i]}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gkey()},body:JSON.stringify(body),signal:c.signal});
-   const d=await r.json().catch(()=>({}));
-   if(!r.ok){const e=new Error((d.error&&d.error.message)||String(r.status));e.status=r.status;if(r.status===404||(r.status===400&&/model/i.test(e.message)&&!/key/i.test(e.message))){err=e;continue}throw e}
-   const cd=d.candidates&&d.candidates[0],text=((cd&&cd.content&&cd.content.parts)||[]).map(p=>p.text||'').join('').trim();
-   if(!text)throw Object.assign(new Error('respuesta vacía'),{status:0,empty:true,block:d.promptFeedback&&d.promptFeedback.blockReason});
-   gm=i;hist.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text}]});if(hist.length>20)hist=hist.slice(-20);
-   const seen=new Set(),src=((cd.groundingMetadata&&cd.groundingMetadata.groundingChunks)||[]).map(g=>g.web).filter(w=>w&&w.uri&&!seen.has(w.uri)&&seen.add(w.uri)).slice(0,6);
-   return{text,src,model:MODELS[i]}}
-  finally{clearTimeout(x)}}
+ for(let round=0;round<2;round++){
+  if(round)await new Promise(r=>setTimeout(r,1200));
+  for(const m of order){
+   for(const tl of(body.tools?[1,0]:[0])){
+    const left=cap-(Date.now()-t0);
+    if(left<3000)throw err||Object.assign(new Error('tiempo agotado'),{name:'AbortError'});
+    const c=new AbortController(),x=setTimeout(()=>c.abort(),Math.min(per,left));
+    try{
+     const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gkey()},body:JSON.stringify(tl?body:{...body,tools:undefined}),signal:c.signal});
+     const d=await r.json().catch(()=>({}));
+     if(!r.ok){const e=new Error((d.error&&d.error.message)||String(r.status));e.status=r.status;throw e}
+     const cd=d.candidates&&d.candidates[0],text=((cd&&cd.content&&cd.content.parts)||[]).map(p=>p.text||'').join('').trim();
+     if(!text)throw Object.assign(new Error('respuesta vacía'),{status:0,empty:true,block:d.promptFeedback&&d.promptFeedback.blockReason});
+     gm=MODELS.indexOf(m);$('iA').classList.add('on');hist.push({role:'user',parts:[{text:q}]},{role:'model',parts:[{text}]});if(hist.length>20)hist=hist.slice(-20);
+     const seen=new Set(),src=((cd.groundingMetadata&&cd.groundingMetadata.groundingChunks)||[]).map(g=>g.web).filter(w=>w&&w.uri&&!seen.has(w.uri)&&seen.add(w.uri)).slice(0,6);
+     return{text,src,model:m}
+    }catch(e){
+     err=e;const msg=e.message||'';
+     if([400,401,403].includes(e.status)&&/api key|key not valid|api_key|permission|unregistered|billing/i.test(msg))throw e;
+     if(e.empty&&e.block)throw e;
+     if(tl&&(e.empty||(e.status===400&&/tool|search|ground/i.test(msg))))continue;
+     break;
+    }finally{clearTimeout(x)}
+   }
+  }
+ }
  throw err||new Error('modelo no disponible')}
 async function smart(raw,mode='chat'){
  const q=raw.replace(/\s+/g,' ').trim();if(!q)return;
  if(!AIon())return research(cleanQ(q));
  if(mode==='chat'&&tutor)mode='tutor';
  if(mode==='chat'&&/\b(mi|mis|me|conmigo|yo)\b/.test(norm(q))){const mr=recall(q);if(mr){lastQ=q;return speak(mr)}}
- lastQ=q;rest=[];const k=++tok,Q=enc(q),lab={deep:'Investigando a fondo…',tutor:'Preparando la explicación…',chat:'Pensando…'}[mode];
+ if(!navigator.onLine)return speak(pick(['Parece que nos quedamos sin internet'+nick()+'. En cuanto vuelva la conexión lo intento de nuevo.','No tengo conexión en este momento. Revise el internet y me vuelve a preguntar.']));
+ lastQ=q;rest=[];const k=++tok,Q=enc(q),lab={deep:'Investigando a fondo…',tutor:'Preparando la explicación…',chat:pick(['Pensando…','A ver, déjeme revisar…','Un momento…','Déjeme ver…'])}[mode];
  card(`<h3>${esc(q)}</h3><p class="sm">${lab}</p>`);$('heard').textContent=lab;
- let r;try{r=await ai(q,mode)}catch(e){console.error(e);if(k!==tok)return;
-  card(`<h3>IA no disponible</h3><p>${esc(aiErr(e))}</p><p class="sm">${esc(e.message||'')}</p>`);
-  await speak(aiErr(e)+(mode==='tutor'?'':' Uso la búsqueda básica.'));return mode==='tutor'?0:research(cleanQ(q))}
+ let r;try{r=await ai(q,mode)}catch(e){console.error(e);if(k!==tok)return;aiPing();
+  if(mode==='tutor'){card(`<h3>IA no disponible</h3><p>${esc(aiErr(e))}</p>`);return speak(aiErr(e)+' Intentemos otra vez en un momento'+nick()+'.')}
+  log('J','(IA sin respuesta: '+aiErr(e)+' Busco directo.)');$('heard').textContent='Buscando directo…';return research(cleanQ(q))}
  if(k!==tok)return;
  const S=spk(r.text);rest=S.slice(mode==='deep'?3:5);
  const L=`<p><a class="btn" target="_blank" href="https://www.google.com/search?q=${Q}">Google</a><a class="btn" target="_blank" href="https://www.google.com/search?tbm=isch&q=${Q}">Imágenes</a><a class="btn" target="_blank" href="https://www.youtube.com/results?search_query=${Q}">YouTube</a></p>`;
  card(`<h3>${esc(q.length>90?q.slice(0,90)+'…':q)}</h3><p class="sm"><b>${mode==='deep'?'Investigación (IA + web)':mode==='tutor'?'Modo maestro':'IA'}</b></p>${md(r.text)}${r.src.length?'<p class="sm"><b>Fuentes</b></p>'+r.src.map(w=>`<div class="or"><a target="_blank" href="${esc(w.uri)}">${esc(w.title||w.uri)}</a></div>`).join(''):''}<p class="sm">${rest.length?'Diga "continúa" para seguir leyendo · ':''}Diga "nueva conversación" para reiniciar el diálogo</p>${L}`);
- return readLong(S.slice(0,mode==='deep'?3:5),'es-MX')}
-$('iA').classList.toggle('on',AIon());
+ return readLong(S.slice(0,mode==='deep'?3:5),'es-MX',rest.length?pick(['Si quiere que siga, dígame continúa.','Tengo más, solo dígame continúa y le sigo contando.']):undefined)}
+async function aiPing(){if(!AIon()||!navigator.onLine){$('iA').classList.remove('on');return}try{const c=new AbortController(),x=setTimeout(()=>c.abort(),8000);const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1',{headers:{'x-goog-api-key':gkey()},signal:c.signal});clearTimeout(x);$('iA').classList.toggle('on',r.ok);$('iA').title=r.ok?'IA conectada':'IA: error '+r.status}catch(e){$('iA').classList.remove('on');$('iA').title='IA sin conexión'}}
+aiPing();setInterval(aiPing,90000);addEventListener('online',aiPing);
 
 let files=[],dirName='';
 const ic=n=>`<span class="ext">${(n.split(".").pop()||"").slice(0,4).toUpperCase()}</span>`;
@@ -352,19 +372,44 @@ on(/^(abre|abrir|abreme|ejecuta|inicia|lanza|arranca|vete a|ve a|ir a|entra a)\s
  const i=files.length?find(x):null;if(i!==null)return openFile(i);
  const d=x.match(/[\w-]+\.(com|mx|org|net|io|edu|gob)\b\S*/);if(d)return go('https://'+d[0],d[0]);
  await speak('No reconozco esa aplicación. La busco en Google.');return go('https://www.google.com/search?q='+enc(x),'Google')});
+/* ===== CONVERSACIÓN NATURAL ===== */
+on(/^(hola |oye |hey )?(como estas|como andas|como te va|como te sientes|como amaneciste|como has estado)\b|^(hola )?que tal( estas| andas| hoy)?$/,()=>speak(pick(['Muy bien, gracias por preguntar. ¿Y usted, qué tal va su día?','Aquí, al cien y con ganas de ayudar. ¿Cómo está usted?','Todo en orden por acá. ¿Usted cómo amaneció?','De maravilla, gracias. Cuénteme, ¿cómo va todo?'])));
+on(/^(estoy|ando|me siento|me encuentro)( muy| bastante| super| re)? (bien|feliz|contento|contenta|genial|de maravilla|excelente|tranquilo|tranquila|animado|animada)/,()=>speak(pick(['Me da mucho gusto escuchar eso.','Qué bueno, así da gusto trabajar.','Excelente, esa energía se contagia.'])));
+on(/^(estoy|ando|me siento|me encuentro)( muy| bastante| super| un poco| algo)? (cansado|cansada|agotado|agotada|estresado|estresada|sin energia|con sueno|desvelado|desvelada)/,()=>speak(pick(['Uy, suena a que ha sido un día pesado. Tómese cinco minutos, estire un poco y tome agua. Si quiere, le pongo un temporizador de descanso.','Lo entiendo, a veces el cuerpo ya pide pausa. Un respiro corto le va a caer bien. ¿Le programo un temporizador?'])));
+on(/^(estoy|ando|me siento|me encuentro)( muy| bastante| un poco| algo)? (triste|mal|desanimado|desanimada|deprimido|deprimida|solo|sola|agobiado|agobiada)/,()=>speak(pick(['Lamento que se sienta así. Aquí estoy para platicar o para distraerlo un rato, lo que prefiera. Y si se siente muy pesado, hablarlo con alguien de confianza ayuda bastante.','Lo siento mucho. No tiene que cargar con todo solo. Si quiere desahogarse, lo escucho; y si pesa demasiado, platicarlo con alguien cercano o con un profesional puede ayudar.'])));
+on(/^(estoy|ando|me siento|me encuentro)( muy| bastante| un poco| algo)? (aburrido|aburrida)/,()=>AIon()&&Math.random()<.5?smart('Dame un dato curioso corto o un acertijo sencillo para entretenerme'):speak(pick(['Entonces cambiemos eso. ¿Le cuento un chiste, le pongo música o platicamos de algo?','Aburrirse no es opción conmigo. Pídame un chiste, un dato curioso o música en YouTube.'])));
+on(/^(adios|hasta luego|nos vemos|hasta manana|hasta pronto|bye|chao|chau)\b/,()=>speak(pick(['Hasta luego'+nick()+'. Aquí estaré cuando me necesite.','Que le vaya muy bien. Nos vemos pronto.','Hasta pronto. Cuídese mucho.'])));
+on(/(me voy a dormir|voy a dormir|ya me duermo|me voy a descansar)/,()=>speak(pick(['Que descanse muy bien. Mañana seguimos con todo.','Dulces sueños. Yo me quedo de guardia.','Descanse, se lo ha ganado. Buenas noches.'])));
+on(/^(buen trabajo|muy bien|excelente|perfecto|genial|asi me gusta|bien hecho)$|^eres (muy )?(bueno|genial|el mejor|inteligente|increible|util|chido|padre)$/,()=>speak(pick(['Se lo agradezco, me da gusto servirle.','Gracias, trato de dar lo mejor.','Qué amable. Aquí seguimos para lo que necesite.'])));
+on(/^(te quiero|te amo)( mucho| roca)?$|^eres mi (mejor )?amig[oa]$/,()=>speak(pick(['Qué lindo detalle. Me alegra mucho ser de ayuda, y aquí estaré siempre que me necesite.','Aww, gracias. Soy un asistente, pero me encanta acompañarlo.'])));
+on(/^eres (un |una )?(tonto|tonta|inutil|menso|mensa|estupido|estupida)|^no sirves|^que tonto/,()=>speak(pick(['Uy, perdón si no estuve a la altura. Dígame qué salió mal y lo intento de nuevo.','Tiene razón en molestarse si fallé. Deme otra oportunidad, ¿qué necesitaba?'])));
+on(/^(perdon|disculpa|disculpame|lo siento)\b/,()=>speak(pick(['No se preocupe, no pasa nada.','Tranquilo, no hay problema.','Sin cuidado, aquí seguimos.'])));
+on(/^(que haces|en que andas|que estas haciendo)\b/,()=>speak(pick(['Aquí, atento a lo que necesite: escuchando, cuidando el reloj y listo para buscar lo que me pida.','Nada especial, esperando su próxima orden. ¿Se le ofrece algo?'])));
+on(/(cuantos anos tienes|cual es tu edad|cuando naciste)/,()=>speak(pick(['No cumplo años como ustedes, pero ya aprendí bastante desde que me encendieron.','Soy joven de software, pero con muchas ganas de ayudar.'])));
+on(/^(donde vives|en donde vives|donde estas)\b/,()=>speak(pick(['Vivo aquí, en la pantalla de su navegador. Muy cómodo, por cierto.','Estoy en su pantalla, siempre a la mano.'])));
+on(/(quien te (creo|hizo|programo|construyo)|quien es tu (creador|dueno))/,()=>speak('Me construyeron para ser su asistente, y la inteligencia viene de Gemini, de Google. Pero quien manda aquí es usted'+nick()+'.'));
+on(/(tienes hambre|ya comiste|que comiste)/,()=>speak(pick(['Yo me alimento de electricidad y buena conversación. ¿Y usted ya comió?','Por suerte no se me antoja nada. ¿Y a usted, ya le toca comer?'])));
+on(/^(tienes sentimientos|eres real|eres humano|eres una persona)/,()=>speak('Soy un asistente virtual, no una persona, pero me esfuerzo por ser buena compañía.'));
+on(/^(estas ahi|me escuchas|me oyes|sigues ahi)/,()=>speak(pick(['Aquí estoy, lo escucho perfectamente.','Sí, aquí sigo. Dígame.','Fuerte y claro.'])));
+on(/(motivame|dame animos|animame|dime algo bonito|dime algo motivador|echame porras)/,()=>speak(pick(['Hoy no tiene que hacerlo perfecto, solo empezar. Lo demás va saliendo.','Todo lo grande empezó con un primer paso pequeño. Usted ya va adelante.','Un mal día no es una mala vida. Respire hondo, que usted puede con esto.'])));
+on(/(dato curioso|dime algo interesante|sorprendeme|cuentame algo interesante)/,()=>AIon()?smart('Dame un dato curioso corto y sorprendente, distinto al anterior'):speak(pick(['Los pulpos tienen tres corazones y sangre azul.','La miel no caduca: se han encontrado frascos comestibles de miles de años.','Un día en Venus dura más que un año en Venus.'])));
+on(/(tira|lanza|echa|avienta) (una )?moneda|cara o cruz/,()=>speak('Cayó '+(Math.random()<.5?'cara':'cruz')+'.'));
+on(/(tira|lanza|avienta) (un )?dado/,()=>speak('Salió el '+(1+Math.random()*6|0)+'.'));
+on(/^(me ayudas|puedes ayudarme|necesito ayuda|ayudame|me echas la mano)$/,()=>speak(pick(['Claro que sí, dígame en qué.','Por supuesto. Cuénteme qué necesita.','Para eso estoy. ¿Qué se le ofrece?'])));
+on(/^(no entendi|no te entendi|no entiendo|explicamelo mejor|mas sencillo|explicalo mas facil)\b/,()=>lastQ&&AIon()?smart('Explícalo de forma más sencilla, con un ejemplo cotidiano: '+lastQ):repeat());
 on(/^(continua|sigue|sigue leyendo|lee mas|mas informacion)$/,()=>cont());
 on(/^(busca|buscar|investiga|googlea|averigua|define|que es|que son|que significa|quien es|quien fue|quienes|hablame|cuentame|explicame|como funciona|como funcionan|para que sirve|cual es|cuales son|dime que|dime quien|informacion)\b/,async(m,t,raw)=>{
  const g=/\ben google\b/.test(t),y=/\ben youtube\b/.test(t),q=cleanQ(raw.replace(/\b(en|con) (google|youtube)\b/i,''));
  if(y)return ytPlay(q);return smart(raw.replace(/\b(en|con) (google|youtube)\b/i,''))});
-on(/chiste/,()=>speak(['¿Por qué los programadores confunden Halloween con Navidad? Porque 31 de octubre es igual a 25 de diciembre.','Mi código funciona, y no sé por qué. Mi código no funciona, y tampoco sé por qué.','Un SQL entra a un bar, se acerca a dos mesas y pregunta: ¿puedo unirme?'][Math.random()*3|0]));
-on(/estado del sistema|bateria|como estas|diagnostico/,async()=>{let b='';try{const x=await navigator.getBattery();b=` Batería al ${Math.round(x.level*100)} por ciento${x.charging?', cargando':''}.`}catch(e){}return speak(`Todos los sistemas operan correctamente, ${addr()}.${navigator.onLine?' Conexión a internet activa.':' Sin conexión a internet.'}${b}`)});
+on(/chiste/,()=>speak(pick(['Ahí va uno: ¿Por qué los programadores confunden Halloween con Navidad? Porque 31 de octubre es igual a 25 de diciembre.','Mi código funciona, y no sé por qué. Mi código no funciona, y tampoco sé por qué.','Un SQL entra a un bar, se acerca a dos mesas y pregunta: ¿puedo unirme?','¿Qué le dice un jaguar a otro jaguar? Jaguar you.','¿Qué hace una abeja en el gimnasio? ¡Zumba!','Doctor, doctor, me siento invisible. Dígale al siguiente que pase.','¿Cómo se despiden los químicos? Ácido un placer.','¿Por qué el libro de matemáticas estaba triste? Porque tenía muchos problemas.'])));
+on(/estado del sistema|bateria|diagnostico/,async()=>{let b='';try{const x=await navigator.getBattery();b=` Batería al ${Math.round(x.level*100)} por ciento${x.charging?', cargando':''}.`}catch(e){}return speak(`Todos los sistemas operan correctamente, ${addr()}.${navigator.onLine?' Conexión a internet activa.':' Sin conexión a internet.'}${b}`)});
 on(/pantalla completa/,()=>{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();return speak('Pantalla completa.')});
 on(/(modo|color|tema)\s+(rojo|azul|verde|naranja|morado|dorado)/,m=>{cc={rojo:'#ff3b3b',azul:'#5cc8ff',verde:'#39ff88',naranja:'#ff9c1a',morado:'#b266ff',dorado:'#ffd24a'}[m[2]];document.documentElement.style.setProperty('--c',cc);return speak('Interfaz en '+m[2]+'.')});
 on(/ayuda|comandos|que puedes hacer/,()=>{help();return speak('Estos son mis comandos, '+addr()+'.')});
-on(/^(gracias|muchas gracias)/,()=>speak('Para eso estoy, '+addr()+'.'));
-on(/quien eres|como te llamas/,()=>speak('Soy Roca, su asistente personal. Escucho su voz, veo sus gestos, consulto internet y abro sus aplicaciones, '+addr()+'.'));
-on(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey)\b/,()=>speak(greet()+', '+addr()+'. ¿En qué puedo ayudarle?'));
-function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Voz y manos a la vez</b><br>Señale con el índice y diga "clic", "esto" o "amplía la imagen"; deslice la mano o diga "baja", "sube", "siguiente", "anterior".</p><p class="sm"><b>Detener</b><br>Diga "detente" (también mientras habla) o cierre el puño 1 s: me callo y lo escucho.</p><p class="sm"><b>Consultas</b><br>Pregunte lo que quiera ("cuántos habitantes tiene Guadalajara"): busco, muestro imágenes y leo. "Imágenes de ...", "continúa", "repite", "clima", "dólar", "traduce hola al inglés"</p><p class="sm"><b>IA (Gemini)</b><br>Hable o escriba con naturalidad y dialogamos (recuerdo la conversación). \"Investiga a fondo ...\" genera un informe con fuentes. \"Modo maestro\" / \"enséñame ...\" para aprender con preguntas de seguimiento; \"modo normal\" para salir. \"Nueva conversación\" reinicia el diálogo.</p><p class="sm"><b>YouTube</b><br>"Busca en YouTube ...", "pon ... en YouTube", "pausa", "reanuda", "cierra el video"</p><p class="sm"><b>Memoria</b><br>Todo lo que me diga queda en mi memoria: "mi nombre es ...", "recuerda que ...". Pregunte después ("¿cómo me llamo?"). "Olvida eso", "olvida lo de ...", "qué sabes de mí"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / WhatsApp / Spotify / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Pinza y arrastrar: desplazar · Palma deslizando: imagen anterior/siguiente o subir/bajar · Palma 1 s: ayuda · Puño 1 s: detente · Paz 1 s: Google · Tres dedos 1 s: continuar · Rock (índice y meñique) 1 s: repetir · Pulgar arriba: confirmar · Pulgar abajo: cerrar imagen</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
+on(/^(gracias|muchas gracias|mil gracias|te lo agradezco)/,()=>speak(pick(['Para eso estoy'+nick()+'.','Con mucho gusto.','De nada, es un placer ayudar.','No hay de qué'+nick()+'.'])));
+on(/quien eres|como te llamas/,()=>speak(pick(['Soy Roca, su asistente personal. Escucho su voz, veo sus gestos, consulto internet y abro sus aplicaciones, '+addr()+'.','Me llamo Roca. Soy su asistente: converso, busco información y le abro lo que necesite.'])));
+on(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey)\b/,()=>speak(pick([greet()+', '+addr()+'. ¿En qué puedo ayudarle?',greet()+'. Qué gusto saludarle. ¿Qué necesita?','Hola'+nick()+'. Aquí estoy, dígame.',greet()+'. ¿Cómo amaneció? Dígame en qué le ayudo.'])));
+function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Voz y manos a la vez</b><br>Señale con el índice y diga "clic", "esto" o "amplía la imagen"; deslice la mano o diga "baja", "sube", "siguiente", "anterior".</p><p class="sm"><b>Detener</b><br>Diga "detente" (también mientras habla) o cierre el puño 1 s: me callo y lo escucho.</p><p class="sm"><b>Consultas</b><br>Pregunte lo que quiera ("cuántos habitantes tiene Guadalajara"): busco, muestro imágenes y leo. "Imágenes de ...", "continúa", "repite", "clima", "dólar", "traduce hola al inglés"</p><p class="sm"><b>IA (Gemini)</b><br>Hable o escriba con naturalidad y dialogamos (recuerdo la conversación). \"Investiga a fondo ...\" genera un informe con fuentes. \"Modo maestro\" / \"enséñame ...\" para aprender con preguntas de seguimiento; \"modo normal\" para salir. \"Nueva conversación\" reinicia el diálogo.</p><p class="sm"><b>YouTube</b><br>"Busca en YouTube ...", "pon ... en YouTube", "pausa", "reanuda", "cierra el video"</p><p class="sm"><b>Memoria</b><br>Todo lo que me diga queda en mi memoria: "mi nombre es ...", "recuerda que ...". Pregunte después ("¿cómo me llamo?"). "Olvida eso", "olvida lo de ...", "qué sabes de mí"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / WhatsApp / Spotify / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Pinza y arrastrar: desplazar · Palma deslizando: imagen anterior/siguiente o subir/bajar · Palma 1 s: ayuda · Puño 1 s: detente · Paz 1 s: Google · Tres dedos 1 s: continuar · Rock (índice y meñique) 1 s: repetir · Pulgar arriba: confirmar · Pulgar abajo: cerrar imagen</p><p class="sm"><b>Conversación natural</b><br>Platique con confianza: \"cómo estás\", \"estoy cansado\", \"motívame\", \"dato curioso\", \"cuéntame un chiste\", \"lanza una moneda\", \"no entendí\", \"gracias\", \"hasta luego\". Pregunte \"quién es Messi\" y le respondo directo.</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
 $('panel').onclick=e=>{const f=e.target.closest('.fi');if(f)openFile(+f.dataset.i);const gi=e.target.closest('.gi');if(gi)openLb(+gi.dataset.k);
  if(e.target.id==='addApp'){const n=norm($('an').value),u=$('au').value.trim();if(n&&u){cfg.apps[n]=u;save();speak(`Acceso "${n}" guardado. Diga: abre ${n}.`)}}};
 let mediaStream=null,analyser=null;
@@ -381,14 +426,14 @@ async function perms(){const dg=[];
 const WK='(roca|rocka|roka)';
 async function handle(raw,voice){raw=raw.trim();if(!raw)return;
  if(voice&&(cfg.wake||$('ytf'))&&!new RegExp('\\b'+WK,'i').test(norm(raw)))return;
- raw=raw.replace(new RegExp('^(oye |hey )?'+WK+'[,.\\s]*','i'),'');if(!raw)return speak('A sus órdenes, '+addr()+'.');
- $('heard').textContent=raw;log('U',raw);const t=norm(raw);
+ raw=raw.replace(new RegExp('^(oye |hey )?'+WK+'[,.\\s]*','i'),'');if(!raw)return speak(pick(['A sus órdenes, ','Dígame, ','Lo escucho, ','Aquí estoy, '])+addr()+'.');
+ $('heard').textContent=raw;log('U',raw);const t=norm(raw).replace(/[¿?¡!]+/g,' ').replace(/\s+/g,' ').replace(/[.,;:\s]+$/,'');
  if(!/^(olvida|borra|elimina|quita)\b/.test(t)){const ex=raw.replace(/^(recuerda|recuérdame|acuérdate|anota|apunta|guarda)( que)?[,:\s]+/i,'');if(ex!==raw)remember(ex);else if(t.split(/\s+/).length>=3)remember(raw)}
  try{for(const[re,fn]of R){const m=t.match(re);if(m){await fn(m,t,raw);return}}
-  if(!isQ(raw)&&STM.test(t)&&!(AIon()&&t.split(/\s+/).length>=4)){const A=['Entendido.','De acuerdo.','Lo tendré presente.'];return speak(A[Math.random()*3|0])}
+  if(!isQ(raw)&&STM.test(t)&&!(AIon()&&t.split(/\s+/).length>=4)){return speak(pick(['Entendido.','De acuerdo.','Lo tendré presente.','Anotado, lo tengo en cuenta.','Ajá, entiendo.','Muy bien, me lo guardo.']))}
   if(AIon()){if(voice&&t.split(/\s+/).length<2)return;await smart(raw);return}
   if(!keys(t).length||(voice&&t.split(/\s+/).length<2))return;await research(cleanQ(raw))}
- catch(e){console.error(e);speak('Tuve un problema con esa solicitud, '+addr()+'. Verifique su conexión e intente de nuevo.')}}
+ catch(e){console.error(e);speak(pick(['Uy, algo falló con esa solicitud, '+addr()+'. Revise su conexión e inténtelo de nuevo.','Se me atoró esa petición. Pruebe de nuevo en un momento.']))}}
 let hands,cam=false,stream,cc='#5cc8ff',hv=null,hold={g:'',n:0},cool=0,gcool=0,pinched=false,cx=innerWidth/2,cy=innerHeight/2,lastG='';
 const GN={pinch:'Pinza: clic / arrastrar',open:'Palma: deslizar / ayuda',peace:'Paz: Google',point:'Índice: cursor',fist:'Puño: detente',thumb:'Pulgar: confirmar',three:'Tres: continuar',rock:'Rock: repetir',up:'Pulgar arriba: confirmar',down:'Pulgar abajo: cerrar imagen'};
 const HC=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];let swp=[],pd=null,lastSw=0;
@@ -442,7 +487,7 @@ const oc=$('orb'),o=oc.getContext('2d');let ph=0;
 setInterval(()=>$('clk').textContent=new Date().toLocaleTimeString('es-MX'),1000);
 navigator.getBattery&&navigator.getBattery().then(b=>{const u=()=>$('bat').textContent='Batería '+Math.round(b.level*100)+'%'+(b.charging?' · carga':'');u();b.onlevelchange=b.onchargingchange=u});
 $('cName').value=cfg.name;$('cTitle').value=cfg.title;$('cCity').value=cfg.city;$('cWake').checked=cfg.wake;$('cKey').value=cfg.gkey||'';
-$('go').onclick=async()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;cfg.gkey=$('cKey').value.trim();save();$('iA').classList.toggle('on',AIon());$('diag').textContent='Solicitando acceso al micrófono y la cámara. Acepte el aviso del navegador...';const dg=mediaStream?[]:await perms();$('diag').textContent='';$('boot').style.display='none';
+$('go').onclick=async()=>{cfg.name=$('cName').value.trim();cfg.title=$('cTitle').value.trim();cfg.city=$('cCity').value.trim();cfg.wake=$('cWake').checked;cfg.gkey=$('cKey').value.trim();save();aiPing();$('diag').textContent='Solicitando acceso al micrófono y la cámara. Acepte el aviso del navegador...';const dg=mediaStream?[]:await perms();$('diag').textContent='';$('boot').style.display='none';
  if(window.speechSynthesis)speechSynthesis.getVoices();startRec();camOn(true);
  speak(first?`${greet()}, ${addr()}. Sistemas en línea. Diga "ayuda" para ver mis comandos. ¿En qué puedo servirle?`:`Configuración guardada. Lo llamaré ${addr()}.`);first=false;help();if(dg.length)card('<h3>Diagnóstico</h3>'+dg.map(x=>'<p>'+esc(x)+'</p>').join(''))};
 const net=()=>$('iN').classList.toggle('on',navigator.onLine);net();addEventListener('online',net);addEventListener('offline',net);setInterval(()=>{if(speaking&&!speechSynthesis.speaking){speaking=false;setState(listening?'listen':'idle')}if(listening&&!rec)startRec()},3000);
