@@ -30,7 +30,7 @@ section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-dir
 #log .U{border-color:#7d8fa1;color:#e6eef6}
 #f{display:flex;gap:6px}#txt{flex:1}
 #mid{align-items:center;justify-content:center;text-align:center}
-#orb{width:min(100%,500px);aspect-ratio:1}
+#orb{width:min(100%,680px);aspect-ratio:4/3}
 #heard{min-height:24px;color:#e6eef6;font-size:15px}#gest{color:var(--c);min-height:16px;font-size:10px;letter-spacing:.18em;text-transform:uppercase}
 #cam{display:none;position:fixed;top:72px;right:18px;width:210px;aspect-ratio:4/3;z-index:15;background:#05090e;border:1px solid var(--c)}#cam.on{display:block}
 #cam video,#cam canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}#cam video{opacity:.8}
@@ -48,6 +48,7 @@ section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-dir
 #lb img{float:none;margin:0;max-width:92vw;max-height:70vh}#lbc{color:#e6eef6;font-size:14px;text-align:center;max-width:80vw}.lbr{display:flex;gap:10px}.lbr button{font-size:20px;padding:12px 26px}
 #panel ul{margin:4px 0 6px 18px}#panel li{margin:3px 0}#panel code{background:#0f1a25;padding:0 4px;border-radius:2px}#panel i{color:#9fb2c4}
 @media(max-width:900px){main{grid-template-columns:1fr;overflow:auto}html,body{overflow:auto}#orb{max-width:300px}}
+#cam.on{opacity:0;width:8px;height:6px;border:0;top:0;right:0;pointer-events:none;overflow:hidden}
 </style></head><body>
 <div id="boot"><div class="box"><h1>ROCA</h1><div class="sub">Sistema de asistencia personal</div>
 <label>¿Cómo debo llamarlo?<input id="cName" placeholder="Roberto Carlos"></label>
@@ -60,7 +61,7 @@ section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-dir
 <header><b>ROCA</b><span class="ind" id="iM"><i></i>MICRÓFONO <span id="lvlw"><span id="lvl"></span></span></span><span class="ind" id="iC"><i></i>CÁMARA</span><span class="ind" id="iN"><i></i>RED</span><span class="ind" id="iA"><i></i>IA</span><span class="ind" id="st">EN ESPERA</span><span id="bat"></span><span id="clk"></span><button id="cfgB">Configuración</button></header>
 <main>
 <section><div class="t">Registro de operaciones</div><div id="log"></div><form id="f"><input id="txt" placeholder="Escriba un comando..." autocomplete="off"><button>Enviar</button></form></section>
-<section id="mid"><canvas id="orb" width="600" height="600"></canvas><div id="heard"></div><div id="gest"></div></section>
+<section id="mid"><canvas id="orb" width="800" height="600"></canvas><div id="heard"></div><div id="gest"></div></section>
 <section><div class="t">Información</div><div id="panel"></div></section>
 </main>
 <footer><button id="micB">Micrófono</button><button id="camB">Cámara</button><button id="dirB">Carpeta</button><button id="helpB">Comandos</button><button id="memB">Memoria</button></footer>
@@ -68,6 +69,7 @@ section{border:1px solid #1a2836;padding:12px;min-height:0;display:flex;flex-dir
 <div id="cam"><video id="vid" playsinline muted></video><canvas id="ov"></canvas></div>
 <div id="lb"><img id="lbi" alt=""><div id="lbc"></div><div class="lbr"><button id="lbp">‹</button><button id="lbx">✕</button><button id="lbn">›</button></div></div><div id="cur"></div><input type="file" id="fi" webkitdirectory multiple hidden>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
 <script>
 const $=s=>document.getElementById(s),enc=encodeURIComponent;
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
@@ -92,7 +94,7 @@ function speak(t,lang='es-MX',own){if(!own){tok++;log('J',t)}return new Promise(
  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[*_#]/g,''));u.lang=lang;
  const L=lang.toLowerCase(),v=voices.find(v=>v.lang.replace('_','-').toLowerCase()==L)||voices.find(v=>v.lang.toLowerCase().startsWith(L.slice(0,2)));
  if(v)u.voice=v;u.pitch=.5;u.rate=.92;curU=u;
- u.onstart=()=>{speaking=true;setState('speak')};
+ u.onstart=()=>{speaking=true;setState('speak')};u.onboundary=()=>{bPulse=1};
  let dn=false;const to=setTimeout(()=>fin(),Math.max(5000,t.length*120));const fin=()=>{if(dn)return;dn=true;clearTimeout(to);if(curU===u){speaking=false;lastEnd=Date.now();setState(listening?'listen':'idle')}res()};u.onend=u.onerror=fin;
  speechSynthesis.speak(u)})}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -237,7 +239,7 @@ async function research(q,o={}){
  return (ext||useW)?readLong(spoken,useW?'es-MX':lang,tl):speak('Estas son las imágenes que encontré sobre '+q+', '+addr()+'.')}
 
 /* ===== IA · GEMINI ===== */
-const GK='no';
+const GK='x';
 const MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-flash-lite','gemini-flash-lite-latest'];
 const gkey=()=>(cfg.gkey||GK).trim(),AIon=()=>!!gkey();
 let hist=[],gm=0,tutor=false;
@@ -409,7 +411,7 @@ on(/ayuda|comandos|que puedes hacer/,()=>{help();return speak('Estos son mis com
 on(/^(gracias|muchas gracias|mil gracias|te lo agradezco)/,()=>speak(pick(['Para eso estoy'+nick()+'.','Con mucho gusto.','De nada, es un placer ayudar.','No hay de qué'+nick()+'.'])));
 on(/quien eres|como te llamas/,()=>speak(pick(['Soy Roca, su asistente personal. Escucho su voz, veo sus gestos, consulto internet y abro sus aplicaciones, '+addr()+'.','Me llamo Roca. Soy su asistente: converso, busco información y le abro lo que necesite.'])));
 on(/^(hola|buenos dias|buenas tardes|buenas noches|buenas|hey)\b/,()=>speak(pick([greet()+', '+addr()+'. ¿En qué puedo ayudarle?',greet()+'. Qué gusto saludarle. ¿Qué necesita?','Hola'+nick()+'. Aquí estoy, dígame.',greet()+'. ¿Cómo amaneció? Dígame en qué le ayudo.'])));
-function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Voz y manos a la vez</b><br>Señale con el índice y diga "clic", "esto" o "amplía la imagen"; deslice la mano o diga "baja", "sube", "siguiente", "anterior".</p><p class="sm"><b>Detener</b><br>Diga "detente" (también mientras habla) o cierre el puño 1 s: me callo y lo escucho.</p><p class="sm"><b>Consultas</b><br>Pregunte lo que quiera ("cuántos habitantes tiene Guadalajara"): busco, muestro imágenes y leo. "Imágenes de ...", "continúa", "repite", "clima", "dólar", "traduce hola al inglés"</p><p class="sm"><b>IA (Gemini)</b><br>Hable o escriba con naturalidad y dialogamos (recuerdo la conversación). \"Investiga a fondo ...\" genera un informe con fuentes. \"Modo maestro\" / \"enséñame ...\" para aprender con preguntas de seguimiento; \"modo normal\" para salir. \"Nueva conversación\" reinicia el diálogo.</p><p class="sm"><b>YouTube</b><br>"Busca en YouTube ...", "pon ... en YouTube", "pausa", "reanuda", "cierra el video"</p><p class="sm"><b>Memoria</b><br>Todo lo que me diga queda en mi memoria: "mi nombre es ...", "recuerda que ...". Pregunte después ("¿cómo me llamo?"). "Olvida eso", "olvida lo de ...", "qué sabes de mí"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / WhatsApp / Spotify / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Pinza y arrastrar: desplazar · Palma deslizando: imagen anterior/siguiente o subir/bajar · Palma 1 s: ayuda · Puño 1 s: detente · Paz 1 s: Google · Tres dedos 1 s: continuar · Rock (índice y meñique) 1 s: repetir · Pulgar arriba: confirmar · Pulgar abajo: cerrar imagen</p><p class="sm"><b>Conversación natural</b><br>Platique con confianza: \"cómo estás\", \"estoy cansado\", \"motívame\", \"dato curioso\", \"cuéntame un chiste\", \"lanza una moneda\", \"no entendí\", \"gracias\", \"hasta luego\". Pregunte \"quién es Messi\" y le respondo directo.</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
+function help(){card(`<h3>Comandos disponibles</h3><p class="sm"><b>Voz y manos a la vez</b><br>Señale con el índice y diga "clic", "esto" o "amplía la imagen"; deslice la mano o diga "baja", "sube", "siguiente", "anterior".</p><p class="sm"><b>Detener</b><br>Diga "detente" (también mientras habla) o cierre el puño 1 s: me callo y lo escucho.</p><p class="sm"><b>Consultas</b><br>Pregunte lo que quiera ("cuántos habitantes tiene Guadalajara"): busco, muestro imágenes y leo. "Imágenes de ...", "continúa", "repite", "clima", "dólar", "traduce hola al inglés"</p><p class="sm"><b>IA (Gemini)</b><br>Hable o escriba con naturalidad y dialogamos (recuerdo la conversación). \"Investiga a fondo ...\" genera un informe con fuentes. \"Modo maestro\" / \"enséñame ...\" para aprender con preguntas de seguimiento; \"modo normal\" para salir. \"Nueva conversación\" reinicia el diálogo.</p><p class="sm"><b>YouTube</b><br>"Busca en YouTube ...", "pon ... en YouTube", "pausa", "reanuda", "cierra el video"</p><p class="sm"><b>Memoria</b><br>Todo lo que me diga queda en mi memoria: "mi nombre es ...", "recuerda que ...". Pregunte después ("¿cómo me llamo?"). "Olvida eso", "olvida lo de ...", "qué sabes de mí"</p><p class="sm"><b>Aplicaciones</b><br>"Abre Excel / Word / WhatsApp / Spotify / YouTube", "abre Excel en línea"</p><p class="sm"><b>Navegación</b><br>"Llévame a ...", "mapa de ...", "pon música de ..."</p><p class="sm"><b>Archivos</b><br>"Abre descargas", "abre archivo factura" (primero el botón Carpeta)</p><p class="sm"><b>Utilidades</b><br>"Temporizador 5 minutos", "anota ...", "mis notas", "cuánto es 5 por 8", "estado del sistema"</p><p class="sm"><b>Gestos</b><br>Índice: cursor · Pinza: clic · Pinza y arrastrar: desplazar · Palma abierta moviéndose arriba/abajo: desplaza la información (texto e imágenes) · en el visor, deslizar de lado: anterior/siguiente · Palma quieta 1.5 s: ayuda · Puño 1 s: detente · Paz 1 s: Google · Tres dedos 1 s: continuar · Rock (índice y meñique) 1 s: repetir · Pulgar arriba: confirmar · Pulgar abajo: cerrar imagen</p><p class="sm"><b>Conversación natural</b><br>Platique con confianza: \"cómo estás\", \"estoy cansado\", \"motívame\", \"dato curioso\", \"cuéntame un chiste\", \"lanza una moneda\", \"no entendí\", \"gracias\", \"hasta luego\". Pregunte \"quién es Messi\" y le respondo directo.</p><p class="sm"><b>Accesos personalizados</b></p><input id="an" placeholder="Nombre (ej. reportes)" style="width:100%"><input id="au" placeholder="URL o protocolo (https://...)" style="width:100%;margin-top:4px"><button id="addApp">Agregar</button>`)}
 $('panel').onclick=e=>{const f=e.target.closest('.fi');if(f)openFile(+f.dataset.i);const gi=e.target.closest('.gi');if(gi)openLb(+gi.dataset.k);
  if(e.target.id==='addApp'){const n=norm($('an').value),u=$('au').value.trim();if(n&&u){cfg.apps[n]=u;save();speak(`Acceso "${n}" guardado. Diga: abre ${n}.`)}}};
 let mediaStream=null,analyser=null;
@@ -435,8 +437,8 @@ async function handle(raw,voice){raw=raw.trim();if(!raw)return;
   if(!keys(t).length||(voice&&t.split(/\s+/).length<2))return;await research(cleanQ(raw))}
  catch(e){console.error(e);speak(pick(['Uy, algo falló con esa solicitud, '+addr()+'. Revise su conexión e inténtelo de nuevo.','Se me atoró esa petición. Pruebe de nuevo en un momento.']))}}
 let hands,cam=false,stream,cc='#5cc8ff',hv=null,hold={g:'',n:0},cool=0,gcool=0,pinched=false,cx=innerWidth/2,cy=innerHeight/2,lastG='';
-const GN={pinch:'Pinza: clic / arrastrar',open:'Palma: deslizar / ayuda',peace:'Paz: Google',point:'Índice: cursor',fist:'Puño: detente',thumb:'Pulgar: confirmar',three:'Tres: continuar',rock:'Rock: repetir',up:'Pulgar arriba: confirmar',down:'Pulgar abajo: cerrar imagen'};
-const HC=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];let swp=[],pd=null,lastSw=0;
+const GN={pinch:'Pinza: clic / arrastrar',open:'Palma: mover = desplazar · quieta = ayuda',peace:'Paz: Google',point:'Índice: cursor',fist:'Puño: detente',thumb:'Pulgar: confirmar',three:'Tres: continuar',rock:'Rock: repetir',up:'Pulgar arriba: confirmar',down:'Pulgar abajo: cerrar imagen'};
+const HC=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];let swp=[],pd=null,lastSw=0,pp=null;
 async function camOn(q){if(cam)return q?0:speak('La cámara ya está activa.');
  const lv=t=>t&&t[0]&&t[0].readyState==='live';
  try{stream=lv(mediaStream&&mediaStream.getVideoTracks())?mediaStream:await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}})}
@@ -446,15 +448,16 @@ async function camOn(q){if(cam)return q?0:speak('La cámara ya está activa.');
  if(!window.Hands)return q?($('heard').textContent='Cámara activa. El módulo de gestos no cargó (revise su conexión).'):speak('Cámara activa, pero el módulo de gestos no cargó. Revise su conexión a internet.');
  hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/'+f});
  hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:.7,minTrackingConfidence:.6});hands.onResults(onHand);
- (async function L(){if(!cam||!hands)return;try{await hands.send({image:v})}catch(e){}requestAnimationFrame(L)})();
+ try{if(window.FaceMesh){face=new FaceMesh({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/'+f});face.setOptions({maxNumFaces:1,refineLandmarks:false,minDetectionConfidence:.6,minTrackingConfidence:.6});face.onResults(onFace)}}catch(e){face=null}
+ let fr=0;(async function L(){if(!cam||!hands)return;try{await hands.send({image:v});if(face&&fr++%2===0)await face.send({image:v})}catch(e){}requestAnimationFrame(L)})();
  if(!q)return speak('Cámara y sensores de gestos en línea.')}
-function camOff(){cam=false;if(stream)stream.getVideoTracks().forEach(t=>t.stop());try{hands&&hands.close()}catch(e){}hands=null;$('cam').classList.remove('on');$('camB').classList.remove('on');$('iC').classList.remove('on');$('cur').style.display='none';$('gest').textContent=''}
+function camOff(){cam=false;faceL=null;faceS=null;handL=null;try{face&&face.close()}catch(e){}face=null;if(stream)stream.getVideoTracks().forEach(t=>t.stop());try{hands&&hands.close()}catch(e){}hands=null;$('cam').classList.remove('on');$('camB').classList.remove('on');$('iC').classList.remove('on');$('cur').style.display='none';$('gest').textContent=''}
 function onHand(r){const ov=$('ov'),ox=ov.getContext('2d');ov.width=r.image.width;ov.height=r.image.height;ox.clearRect(0,0,ov.width,ov.height);
  const L=r.multiHandLandmarks&&r.multiHandLandmarks[0],cur=$('cur');
- if(!L){setG('');cur.style.display='none';hold={g:'',n:0};swp=[];pd=null;pinched=false;return}
+ if(!L){setG('');cur.style.display='none';hold={g:'',n:0};swp=[];pd=null;pinched=false;pp=null;handL=null;return}
  ox.strokeStyle=cc;ox.lineWidth=1.5;HC.forEach(([a,b])=>{ox.beginPath();ox.moveTo(L[a].x*ov.width,L[a].y*ov.height);ox.lineTo(L[b].x*ov.width,L[b].y*ov.height);ox.stroke()});
  ox.fillStyle=cc;L.forEach(p=>{ox.beginPath();ox.arc(p.x*ov.width,p.y*ov.height,3,0,7);ox.fill()});
- const D=(a,b)=>Math.hypot(L[a].x-L[b].x,L[a].y-L[b].y),sz=D(0,9),ex=(t,p)=>D(0,t)>D(0,p)*1.05;
+ handL=L;handT=Date.now();const D=(a,b)=>Math.hypot(L[a].x-L[b].x,L[a].y-L[b].y),sz=D(0,9),ex=(t,p)=>D(0,t)>D(0,p)*1.05;
  const i=ex(8,6),m=ex(12,10),rg=ex(16,14),p=ex(20,18),th=D(4,5)>sz*.7;let g='';
  if(D(4,8)/sz<.3)g='pinch';else if(i&&m&&rg&&p)g='open';else if(i&&m&&rg)g='three';else if(i&&m&&!rg&&!p)g='peace';else if(i&&!m&&!rg&&p)g='rock';else if(i&&!m&&!rg&&!p)g='point';
  else if(!i&&!m&&!rg&&!p)g=th?(L[4].y<L[2].y-sz*.3?'up':L[4].y>L[2].y+sz*.3?'down':'thumb'):'fist';
@@ -466,24 +469,64 @@ function onHand(r){const ov=$('ov'),ox=ov.getContext('2d');ov.width=r.image.widt
   if(g==='pinch'){if(!pd)pd={y:L[8].y,top:$('panel').scrollTop,mv:false,e};else{const dy=L[8].y-pd.y;if(Math.abs(dy)>.04)pd.mv=true;if(pd.mv)$('panel').scrollTop=pd.top-dy*1600}}}
  else cur.style.display='none';
  if(g!=='pinch'&&pd){const q=pd;pd=null;if(!q.mv&&q.e&&now>cool){cool=now+500;q.e.click();q.e.focus&&q.e.focus()}}
- if(g==='open'){swp.push({t:now,x:1-L[9].x,y:L[9].y});swp=swp.filter(s=>now-s.t<600);const f=swp[0],dx=(1-L[9].x)-f.x,dy=L[9].y-f.y;
-  if(now>lastSw+800&&swp.length>3){const H=Math.abs(dx)>.28&&Math.abs(dx)>2*Math.abs(dy),V=Math.abs(dy)>.28&&Math.abs(dy)>2*Math.abs(dx);
-   if(H||V){lastSw=now;swp=[];hold.n=0;$('gest').textContent=H?(dx>0?'Deslizar →':'Deslizar ←'):(dy<0?'Deslizar ↑':'Deslizar ↓');lastG='';
-    if(H){if($('lb').classList.contains('on'))lbNav(dx>0?1:-1);else{const gl=document.querySelector('.gal');gl&&gl.scrollBy({left:dx*300,behavior:'smooth'})}}else scrollP(dy<0?1:-1)}}}
- else swp=[];
- if(hold.n===18&&now>gcool){gcool=now+2500;
+ if(g==='open'){const X=1-L[9].x,Y=L[9].y,lbo=$('lb').classList.contains('on');swp.push({t:now,x:X,y:Y});swp=swp.filter(q=>now-q.t<600);
+  if(pp){const ddx=X-pp.x,ddy=Y-pp.y;
+   if(Math.abs(ddx)+Math.abs(ddy)>.004){hold.n=0;gcool=Math.max(gcool,now+1500)}
+   if(!lbo&&Math.abs(ddy)>.002&&Math.abs(ddy)>=Math.abs(ddx)*.7){$('panel').scrollTop-=ddy*2600;$('gest').textContent=ddy<0?'Desplazando ↓':'Desplazando ↑';lastG='open'}}
+  pp={x:X,y:Y};
+  if(lbo&&now>lastSw+800&&swp.length>3){const f=swp[0],dx=X-f.x,dy=Y-f.y;if(Math.abs(dx)>.28&&Math.abs(dx)>2*Math.abs(dy)){lastSw=now;swp=[];hold.n=0;$('gest').textContent=dx>0?'Deslizar →':'Deslizar ←';lastG='open';lbNav(dx>0?1:-1)}}}
+ else{swp=[];pp=null}
+ if(hold.n===(g==='open'?45:18)&&now>gcool){gcool=now+2500;
   if(g==='open')help();else if(g==='fist')interrupt();else if(g==='peace')googleLast();else if(g==='three')cont();else if(g==='rock')repeat();
   else if(g==='up'||g==='thumb')speak('Entendido, '+addr()+'.');else if(g==='down')closeLb()}}
 function setG(g){if(g!==lastG){lastG=g;$('gest').textContent=GN[g]||''}}
-const oc=$('orb'),o=oc.getContext('2d');let ph=0;
-(function draw(){ph+=.01;lvlUpd();o.clearRect(0,0,600,600);
- const a=state==='speak'?8+Math.sin(ph*30)*6+Math.random()*8:state==='listen'?4+Math.sin(ph*6)*3:2;
- o.strokeStyle=cc;o.shadowColor=cc;o.shadowBlur=6;
- o.setLineDash([2,10]);o.lineWidth=2;o.globalAlpha=.5;o.beginPath();o.arc(300,300,265,ph,ph+7);o.stroke();o.setLineDash([]);
- for(let k=0;k<5;k++){o.lineWidth=k==2?5:2;o.globalAlpha=.9-k*.12;const r=70+k*38+a*(k%2?-1:1)*.6,s=ph*(k%2?-1:1)*(1+k*.3);
+const oc=$('orb'),o=oc.getContext('2d');let ph=0,face=null,faceL=null,faceT=0,faceS=null,handT=0,handS=null,mAmp=0,bPulse=0;var handL=null;
+const LIPIN=[78,191,80,81,82,13,312,311,310,415,308,324,318,402,317,14,87,178,88,95];
+function onFace(r){const L=r.multiFaceLandmarks&&r.multiFaceLandmarks[0];if(L){faceL=L;faceT=Date.now()}else faceL=null}
+const fit=()=>{const v=$('vid'),vw=v.videoWidth||640,vh=v.videoHeight||480,ar=vw/vh;let dW=800,dH=800/ar;if(dH>600){dH=600;dW=600*ar}return{dW,dH,oX:(800-dW)/2,oY:(600-dH)/2}};
+const FM=n=>window[n]||[];
+function mouthFx(Q,A){if(A<.01)return Q;const t=Q[10],c=Q[152],m={x:(Q[13].x+Q[14].x)/2,y:(Q[13].y+Q[14].y)/2};let dx=c.x-t.x,dy=c.y-t.y;const fh=Math.hypot(dx,dy)||1;dx/=fh;dy/=fh;const rx=-dy,ry=dx,op=A*.13*fh;
+ return Q.map(p=>{const vx=p.x-m.x,vy=p.y-m.y,u=(vx*rx+vy*ry)/fh,v=(vx*dx+vy*dy)/fh,g=Math.max(0,1-(u/.5)*(u/.5));let w=0;
+  if(v>=0)w=g*(v<.3?1:Math.max(0,1-(v-.3)/.12));else if(v>-.1)w=-.16*g*(1+v/.1);
+  if(!w)return p;const lip=Math.abs(v)<.07;if(lip)w*=Math.max(.35,Math.min(1,1-(Math.abs(u)-.09)/.1));
+  const nx=lip?-u*A*.1*fh:0;return{x:p.x+dx*op*w+rx*nx,y:p.y+dy*op*w+ry*nx}})}
+function orb(f){const a=state==='speak'?8+Math.sin(ph*30)*6+Math.random()*8:state==='listen'?4+Math.sin(ph*6)*3:2;
+ o.save();o.translate(100,0);o.strokeStyle=cc;o.shadowColor=cc;o.shadowBlur=6;
+ o.setLineDash([2,10]);o.lineWidth=2;o.globalAlpha=.5*f;o.beginPath();o.arc(300,300,265,ph,ph+7);o.stroke();o.setLineDash([]);
+ for(let k=0;k<5;k++){o.lineWidth=k==2?5:2;o.globalAlpha=(.9-k*.12)*f;const r=70+k*38+a*(k%2?-1:1)*.6,s=ph*(k%2?-1:1)*(1+k*.3);
   o.beginPath();o.arc(300,300,r,s,s+Math.PI*(1.2+k*.1));o.stroke();o.beginPath();o.arc(300,300,r,s+Math.PI*1.4,s+Math.PI*1.9);o.stroke()}
- o.globalAlpha=1;const g=o.createRadialGradient(300,300,4,300,300,60+a);g.addColorStop(0,'#fff');g.addColorStop(.35,cc);g.addColorStop(1,'transparent');
- o.fillStyle=g;o.beginPath();o.arc(300,300,60+a,0,7);o.fill();requestAnimationFrame(draw)})();
+ o.globalAlpha=f;const g=o.createRadialGradient(300,300,4,300,300,60+a);g.addColorStop(0,'#fff');g.addColorStop(.35,cc);g.addColorStop(1,'transparent');
+ o.fillStyle=g;o.beginPath();o.arc(300,300,60+a,0,7);o.fill();o.restore()}
+function drawFace(){const F=fit(),Lm=faceL;
+ if(!faceS||faceS.length!==Lm.length)faceS=Lm.map(p=>({x:p.x,y:p.y}));else for(let i=0;i<Lm.length;i++){faceS[i].x+=(Lm[i].x-faceS[i].x)*.55;faceS[i].y+=(Lm[i].y-faceS[i].y)*.55}
+ const Q=mouthFx(faceS.map(p=>({x:F.oX+(1-p.x)*F.dW,y:F.oY+p.y*F.dH})),mAmp);
+ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const p of Q){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
+ const H=y1-y0,sy=y0-H*.1+((ph*.9)%1)*H*1.2,bw=H*.07,glow=y=>Math.exp(-Math.pow((y-sy)/bw,2)),T=FM('FACEMESH_TESSELATION');
+ o.save();o.strokeStyle=cc;o.fillStyle=cc;o.shadowColor=cc;
+ o.lineWidth=.6;o.globalAlpha=.28;o.beginPath();for(const[a,b]of T){o.moveTo(Q[a].x,Q[a].y);o.lineTo(Q[b].x,Q[b].y)}o.stroke();
+ o.lineWidth=1;o.globalAlpha=.95;o.shadowBlur=8;o.beginPath();for(const[a,b]of T){if(Math.abs((Q[a].y+Q[b].y)/2-sy)<bw*1.3){o.moveTo(Q[a].x,Q[a].y);o.lineTo(Q[b].x,Q[b].y)}}o.stroke();
+ o.lineWidth=1.8;o.globalAlpha=.85;o.shadowBlur=6;
+ for(const n of['FACEMESH_FACE_OVAL','FACEMESH_LEFT_EYE','FACEMESH_RIGHT_EYE','FACEMESH_LEFT_EYEBROW','FACEMESH_RIGHT_EYEBROW','FACEMESH_LIPS']){o.beginPath();for(const[a,b]of FM(n)){o.moveTo(Q[a].x,Q[a].y);o.lineTo(Q[b].x,Q[b].y)}o.stroke()}
+ o.shadowBlur=0;for(let i=0;i<Q.length;i++){const p=Q[i],g=glow(p.y),sz=1.3+2.2*g;o.globalAlpha=.55+.45*g;o.fillRect(p.x-sz/2,p.y-sz/2,sz,sz)}
+ if(mAmp>.02){o.beginPath();LIPIN.forEach((i,k)=>k?o.lineTo(Q[i].x,Q[i].y):o.moveTo(Q[i].x,Q[i].y));o.closePath();o.globalAlpha=.25+.5*mAmp;o.shadowBlur=14;o.fill()}
+ if(state==='speak'){o.shadowBlur=0;const n=28,w=(x1-x0)*.7,sx=(x0+x1)/2-w/2,by=Math.min(y1+38,585);o.globalAlpha=.8;for(let k=0;k<n;k++){const h=3+(mAmp*28+4)*(.3+.7*Math.abs(Math.sin(ph*14+k*.9)))*(.6+.4*Math.random());o.fillRect(sx+k*w/n,by-h/2,w/n*.6,h)}}
+ const px=x0-22,py=y0-22,qx=x1+22,qy=y1+22,l=28;o.shadowBlur=6;o.globalAlpha=.9;o.lineWidth=2;o.beginPath();
+ [[px,py,1,1],[qx,py,-1,1],[px,qy,1,-1],[qx,qy,-1,-1]].forEach(([x,y,a,b])=>{o.moveTo(x+a*l,y);o.lineTo(x,y);o.lineTo(x,y+b*l)});o.stroke();
+ o.globalAlpha=.5;o.lineWidth=1.5;o.beginPath();o.moveTo(px,sy);o.lineTo(qx,sy);o.stroke();
+ o.shadowBlur=0;o.globalAlpha=.85;o.font='11px Consolas,monospace';o.fillText('ESCANEO FACIAL · '+Q.length+' PUNTOS',px,Math.max(12,py-8));o.textAlign='right';o.fillText(state==='speak'?'VOZ ACTIVA':state==='listen'?'ESCUCHANDO':'EN ESPERA',qx,Math.max(12,py-8));
+ o.restore()}
+function drawHand(){const F=fit();if(!handS||handS.length!==handL.length)handS=handL.map(p=>({x:p.x,y:p.y}));else handL.forEach((p,i)=>{handS[i].x+=(p.x-handS[i].x)*.6;handS[i].y+=(p.y-handS[i].y)*.6});
+ const Q=handS.map(p=>({x:F.oX+(1-p.x)*F.dW,y:F.oY+p.y*F.dH}));
+ o.save();o.shadowColor=cc;o.shadowBlur=10;o.fillStyle=cc;o.globalAlpha=.12;o.beginPath();[0,1,5,9,13,17].forEach((i,k)=>k?o.lineTo(Q[i].x,Q[i].y):o.moveTo(Q[i].x,Q[i].y));o.closePath();o.fill();
+ o.strokeStyle='#fff';o.lineWidth=2;o.globalAlpha=.9;o.beginPath();HC.forEach(([a,b])=>{o.moveTo(Q[a].x,Q[a].y);o.lineTo(Q[b].x,Q[b].y)});o.stroke();
+ o.fillStyle=cc;Q.forEach((p,i)=>{o.beginPath();o.arc(p.x,p.y,[4,8,12,16,20].includes(i)?5:3,0,7);o.fill()});o.restore()}
+(function draw(){ph+=.01;lvlUpd();o.clearRect(0,0,800,600);const now=Date.now();
+ bPulse*=.88;const tgt=state==='speak'?(.25+.75*Math.abs(Math.sin(ph*20+Math.sin(ph*9)*2))*(.55+.45*Math.random())):0;mAmp+=(Math.max(tgt,bPulse*.9)-mAmp)*.4;if(state!=='speak'&&mAmp<.02)mAmp=0;
+ const hasF=cam&&faceL&&now-faceT<600,hasH=cam&&handL&&now-handT<300;
+ if(!hasF){faceS=null;orb(cam?.45:1);if(cam){o.save();o.fillStyle=cc;o.globalAlpha=.6+.3*Math.sin(ph*8);o.font='12px Consolas,monospace';o.textAlign='center';o.fillText('BUSCANDO ROSTRO…',400,585);o.restore()}}
+ else{o.save();o.strokeStyle=cc;o.globalAlpha=.25;o.setLineDash([2,10]);o.lineWidth=2;o.beginPath();o.arc(400,300,290,ph,ph+7);o.stroke();o.restore();drawFace()}
+ if(!hasH)handS=null;else drawHand();
+ requestAnimationFrame(draw)})();
 setInterval(()=>$('clk').textContent=new Date().toLocaleTimeString('es-MX'),1000);
 navigator.getBattery&&navigator.getBattery().then(b=>{const u=()=>$('bat').textContent='Batería '+Math.round(b.level*100)+'%'+(b.charging?' · carga':'');u();b.onlevelchange=b.onchargingchange=u});
 $('cName').value=cfg.name;$('cTitle').value=cfg.title;$('cCity').value=cfg.city;$('cWake').checked=cfg.wake;$('cKey').value=cfg.gkey||'';
