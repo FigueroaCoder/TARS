@@ -237,7 +237,7 @@ async function research(q,o={}){
  return (ext||useW)?readLong(spoken,useW?'es-MX':lang,tl):speak('Estas son las imágenes que encontré sobre '+q+', '+addr()+'.')}
 
 /* ===== IA · GEMINI ===== */
-const GK='AQ.Ab8RN6Jf73Ot6cWlmF1xCj7sIvMF_5ImA9yNES73pCGAXDPlDw';
+const GK='no';
 const MODELS=['gemini-flash-latest','gemini-2.5-flash','gemini-2.0-flash','gemini-2.5-flash-lite','gemini-flash-lite-latest'];
 const gkey=()=>(cfg.gkey||GK).trim(),AIon=()=>!!gkey();
 let hist=[],gm=0,tutor=false;
